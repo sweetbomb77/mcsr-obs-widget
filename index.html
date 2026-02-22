@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST Stats v0.1.20</title>
+    <title>SIMGHST Stats v0.1.21</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root { --bg: rgba(10, 10, 15, 0.95); --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; }
@@ -13,17 +13,20 @@
         .grid { display: flex; justify-content: space-between; }
         .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
         .val { font-size: 26px; font-weight: 800; }
-        .footer { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .footer { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: 0.2s; }
+        .footer:hover { background: rgba(255,255,255,0.1); }
         .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--win); box-shadow: 0 0 10px var(--win); }
+        .inspect-btn { position: absolute; bottom: 8px; left: 12px; font-size: 8px; color: var(--accent); cursor: pointer; text-decoration: underline; }
     </style>
 </head>
 <body>
 <div class="card">
-    <div class="version-tag">V 0.1.20</div>
+    <div class="version-tag">V 0.1.21</div>
+    <div class="inspect-btn" onclick="inspectData()">INSPECT API DATA</div>
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div class="rank-tag">
             <span id="rank-icon">⬛</span>
-            <span id="rank-text">COAL I</span>
+            <span id="rank-text">COAL</span>
         </div>
         <div style="font-size: 11px; opacity: 0.5; font-weight: 600;">SIMGHST</div>
     </div>
@@ -31,11 +34,11 @@
         <div><div class="label">Current Elo</div><div id="elo" class="val">---</div></div>
         <div style="text-align:right;"><div class="label">Winrate</div><div id="wr" class="val">--%</div></div>
     </div>
-    <div class="footer">
+    <div class="footer" onclick="update()">
         <div class="dot"></div>
         <div class="info">
             <span id="m-status" style="font-weight:700; font-size:14px;">LIVE</span>
-            <span id="m-detail" style="font-size:11px; color:#aaa; margin-top:2px;">Syncing Season...</span>
+            <span id="m-detail" style="font-size:11px; color:#aaa; margin-top:2px;">Click to force refresh</span>
         </div>
     </div>
 </div>
@@ -44,55 +47,50 @@
     const BRIDGE = 'https://script.google.com/macros/s/AKfycbygvsvLV51L7addBEBvIsWTSqg5tVz6vuxaynPcEsb153jYBHThOIgoczuDahk8dn1t/exec';
     const KEY = 'lyidaeudwfggjkfydsdglvqaby839pyxmp8e2zovl4fg5mfhbu0zxz4qijhmzyn9';
     const USER = 'simghst';
+    let lastRawData = null;
 
     function getRank(elo) {
-        const ranks = [
-            [2000, "Netherite", "🟣"], [1500, "Diamond", "💎"], [1200, "Emerald", "❇️"],
-            [900, "Gold", "🟡"], [600, "Iron", "⚪"], 
-            [400, "Coal III", "⬛"], [200, "Coal II", "⬛"], [0, "Coal I", "⬛"]
-        ];
-        const r = ranks.find(r => elo >= r[0]) || [0, "Coal I", "⬛"];
+        const ranks = [[2000,"Netherite","🟣"],[1500,"Diamond","💎"],[1200,"Emerald","❇️"],[900,"Gold","🟡"],[600,"Iron","⚪"],[400,"Coal III","⬛"],[200,"Coal II","⬛"],[0,"Coal I","⬛"]];
+        const r = ranks.find(r => elo >= r[0]) || [0,"Coal I","⬛"];
         return { n: r[1], i: r[2] };
     }
 
-    async function fetchAPI(path) {
-        const url = `https://api.mcsrranked.com/${path}?api_key=${KEY}`;
-        const res = await fetch(`${BRIDGE}?url=${encodeURIComponent(url)}`);
-        return await res.json();
+    // Function to show you the data
+    function inspectData() {
+        if (lastRawData) {
+            console.log("--- MCSR RAW DATA START ---");
+            console.log(lastRawData);
+            console.log("--- MCSR RAW DATA END ---");
+            alert("Data logged to Console (F12)!");
+        } else {
+            alert("No data loaded yet. Wait 5 seconds.");
+        }
     }
 
     async function update() {
         try {
-            const pData = await fetchAPI(`users/${USER}`);
-            if (pData.status !== "success") return;
-            const u = pData.data;
-
-            // 1. Set Elo & Rank Division
-            const elo = u.eloRate || 0;
-            const r = getRank(elo);
-            document.getElementById('elo').innerText = elo;
-            document.getElementById('rank-text').innerText = r.n;
-            document.getElementById('rank-icon').innerText = r.i;
-
-            // 2. Stat Logic
-            let wins = u.statistics?.season?.wins?.ranked ?? u.statistics?.season?.wins ?? 0;
-            let losses = u.statistics?.season?.losses?.ranked ?? u.statistics?.season?.losses ?? 0;
-
-            // 3. Emergency Counter (If profile shows 0)
-            if (wins === 0 && losses === 0) {
-                const mData = await fetchAPI(`users/${USER}/matches?count=20`);
-                if (mData.status === "success") {
-                    wins = mData.data.filter(m => m.result.uuid === u.uuid).length;
-                    losses = mData.data.length - wins;
-                }
-            }
-
-            const total = wins + losses;
-            const wr = total > 0 ? ((wins / total) * 100).toFixed(1) : "0.0";
+            const url = `https://api.mcsrranked.com/users/${USER}?api_key=${KEY}`;
+            const res = await fetch(`${BRIDGE}?url=${encodeURIComponent(url)}`);
+            const json = await res.json();
             
-            document.getElementById('wr').innerText = wr + "%";
-            document.getElementById('m-detail').innerText = `Record: ${wins}W - ${losses}L`;
+            if (json.status === "success") {
+                lastRawData = json.data;
+                const u = json.data;
+                
+                document.getElementById('elo').innerText = u.eloRate || 0;
+                const r = getRank(u.eloRate);
+                document.getElementById('rank-text').innerText = r.n;
+                document.getElementById('rank-icon').innerText = r.i;
 
+                // Attempting current logic
+                const s = u.statistics?.season || {};
+                const wins = s.wins?.ranked ?? s.wins?.total ?? s.wins ?? 0;
+                const losses = s.losses?.ranked ?? s.losses?.total ?? s.losses ?? 0;
+                
+                const total = wins + losses;
+                document.getElementById('wr').innerText = total > 0 ? ((wins/total)*100).toFixed(1) + "%" : "0%";
+                document.getElementById('m-detail').innerText = `Record: ${wins}W - ${losses}L`;
+            }
         } catch (e) {
             document.getElementById('m-status').innerText = "SYNC ERROR";
         }
