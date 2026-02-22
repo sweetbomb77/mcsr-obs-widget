@@ -16,109 +16,40 @@
             --border-radius: 18px;
         }
 
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: 'Outfit', sans-serif;
-            color: var(--text-main);
-            background: transparent;
-            width: 330px;
-        }
-
+        body { margin: 0; padding: 20px; font-family: 'Outfit', sans-serif; color: var(--text-main); background: transparent; width: 340px; }
         .widget-card {
-            background: var(--bg-glass);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--border-radius);
-            padding: 22px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
+            background: var(--bg-glass); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius);
+            padding: 22px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            display: flex; flex-direction: column; gap: 18px;
         }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+        .header { display: flex; justify-content: space-between; align-items: center; }
         .rank-badge {
             background: linear-gradient(135deg, rgba(125, 95, 255, 0.3), rgba(125, 95, 255, 0.1));
-            color: var(--accent);
-            padding: 5px 12px;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 800;
-            text-transform: uppercase;
-            border: 1px solid rgba(125, 95, 255, 0.3);
+            color: var(--accent); padding: 5px 12px; border-radius: 10px;
+            font-size: 13px; font-weight: 800; text-transform: uppercase; border: 1px solid rgba(125, 95, 255, 0.3);
         }
-
-        .stats-row {
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .stat-item .label {
-            font-size: 10px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
-        }
-
-        .stat-item .value {
-            font-size: 26px;
-            font-weight: 800;
-            background: linear-gradient(to bottom, #fff, #ccc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
+        .stats-row { display: flex; justify-content: space-between; }
+        .stat-item .label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .stat-item .value { font-size: 26px; font-weight: 800; color: #fff; }
         .match-footer {
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 14px;
-            padding: 14px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.04); border-radius: 14px; padding: 14px;
+            display: flex; align-items: center; gap: 14px; border: 1px solid rgba(255, 255, 255, 0.05);
         }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-        }
-
-        .match-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        #match-status {
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        #match-detail {
-            font-size: 11px;
-            color: var(--text-dim);
-            margin-top: 2px;
-        }
-
-        .color-win { color: var(--win) !important; text-shadow: 0 0 10px rgba(0, 255, 136, 0.3); }
-        .color-loss { color: var(--loss) !important; text-shadow: 0 0 10px rgba(255, 71, 87, 0.3); }
-        .color-draw { color: var(--draw) !important; text-shadow: 0 0 10px rgba(255, 165, 2, 0.3); }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .match-info { display: flex; flex-direction: column; }
+        #match-status { font-size: 14px; font-weight: 700; }
+        #match-detail { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+        .color-win { color: var(--win) !important; }
+        .color-loss { color: var(--loss) !important; }
+        .color-draw { color: var(--draw) !important; }
     </style>
 </head>
 <body>
 
 <div class="widget-card">
     <div class="header">
-        <div id="rank-text" class="rank-badge">Searching...</div>
+        <div id="rank-text" class="rank-badge">Loading...</div>
         <div style="font-size: 10px; opacity: 0.4; font-weight: 600;">SIMGHST</div>
     </div>
 
@@ -137,7 +68,7 @@
         <div id="status-dot" class="status-dot" style="background-color: #444;"></div>
         <div class="match-info">
             <span id="match-status">Connecting...</span>
-            <span id="match-detail">Syncing with MCSR servers</span>
+            <span id="match-detail">Syncing data...</span>
         </div>
     </div>
 </div>
@@ -146,30 +77,52 @@
     const API_KEY = 'mvsvvoa14gj85103mabtpz6uwc9q5xhehci3boss3dsgxo10kutse97rtabykedz';
     const USERNAME = 'simghst';
 
+    function getRankName(elo) {
+        if (elo < 200) return "Coal I";
+        if (elo < 400) return "Coal II";
+        if (elo < 600) return "Coal III";
+        if (elo < 700) return "Iron I";
+        if (elo < 800) return "Iron II";
+        if (elo < 900) return "Iron III";
+        if (elo < 1000) return "Gold I";
+        if (elo < 1100) return "Gold II";
+        if (elo < 1200) return "Gold III";
+        if (elo < 1300) return "Emerald I";
+        if (elo < 1400) return "Emerald II";
+        if (elo < 1500) return "Emerald III";
+        if (elo < 1650) return "Diamond I";
+        if (elo < 1800) return "Diamond II";
+        if (elo < 2000) return "Diamond III";
+        return "Netherite";
+    }
+
     async function updateStats() {
         try {
-            const profileReq = await fetch(`https://api.mcsrranked.com/users/${USERNAME}?api_key=${API_KEY}`);
+            const url = `https://api.mcsrranked.com/users/${USERNAME}?api_key=${API_KEY}`;
+            const profileReq = await fetch(url);
             const pData = await profileReq.json();
 
             if (pData.status === "success") {
                 const user = pData.data;
-                document.getElementById('elo-val').innerText = user.eloRate || '0';
-                document.getElementById('rank-text').innerText = user.eloRank || 'Unranked';
+                const currentElo = user.eloRate || 0;
+                document.getElementById('elo-val').innerText = currentElo;
+                document.getElementById('rank-text').innerText = getRankName(currentElo);
                 
                 const stats = user.statistics.season;
                 const total = (stats.wins.total || 0) + (stats.losses.total || 0);
                 const wr = total > 0 ? ((stats.wins.total / total) * 100).toFixed(1) : 0;
                 document.getElementById('wr-val').innerText = `${wr}%`;
 
-                const matchReq = await fetch(`https://api.mcsrranked.com/users/${USERNAME}/matches?api_key=${API_KEY}&count=1`);
-                const mData = await matchReq.json();
-                
+                // Try fetching last match
+                const mReq = await fetch(`https://api.mcsrranked.com/users/${USERNAME}/matches?api_key=${API_KEY}&count=1`);
+                const mData = await mReq.json();
                 if (mData.status === "success" && mData.data.length > 0) {
                     processLastMatch(mData.data[0]);
                 }
             }
         } catch (err) {
-            console.error("API Connection Error", err);
+            document.getElementById('match-status').innerText = "API Error";
+            console.error(err);
         }
     }
 
@@ -179,38 +132,28 @@
         const detail = document.getElementById('match-detail');
         const myUUID = match.players.find(p => p.nickname.toLowerCase() === USERNAME.toLowerCase())?.uuid;
 
-        // Reset classes
         status.className = "";
-        
         if (match.result.uuid === myUUID) {
             dot.style.backgroundColor = 'var(--win)';
-            dot.style.boxShadow = '0 0 10px var(--win)';
             status.innerText = "LAST MATCH: WIN";
             status.classList.add("color-win");
             const time = new Date(match.result.time).toISOString().substr(14, 5);
-            detail.innerText = `Beat the game in ${time}`;
-        } else if (match.result.uuid === null) {
+            detail.innerText = `Finished in ${time}`;
+        } else if (!match.result.uuid) {
             dot.style.backgroundColor = 'var(--draw)';
-            dot.style.boxShadow = '0 0 10px var(--draw)';
             status.innerText = "LAST MATCH: DRAW";
             status.classList.add("color-draw");
-            detail.innerText = "Match ended in a tie";
+            detail.innerText = "No winner declared";
         } else {
             dot.style.backgroundColor = 'var(--loss)';
-            dot.style.boxShadow = '0 0 10px var(--loss)';
             status.innerText = "LAST MATCH: LOSS";
             status.classList.add("color-loss");
-            
-            if (match.forfeited) {
-                detail.innerText = "Reason: Forfeit / Reset";
-            } else {
-                detail.innerText = "Reason: Opponent beat the game";
-            }
+            detail.innerText = match.forfeited ? "Forfeited / Reset" : "Opponent finished first";
         }
     }
 
     updateStats();
-    setInterval(updateStats, 45000); 
+    setInterval(updateStats, 30000); 
 </script>
 </body>
 </html>
