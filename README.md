@@ -1,0 +1,1 @@
+# mcsr-obs-widget
