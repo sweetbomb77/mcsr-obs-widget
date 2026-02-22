@@ -2,25 +2,28 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST Dashboard v0.2.2</title>
+    <title>SIMGHST Dashboard v0.2.4</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;900&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #0a0a0f; --card: rgba(20, 20, 30, 0.95); --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; --draw: #ffcc00; }
         body { margin: 0; padding: 10px; font-family: 'Outfit', sans-serif; color: white; background: transparent; width: 350px; }
         .container { background: var(--card); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 18px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); position: relative; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .username { font-weight: 900; font-size: 18px; letter-spacing: 1px; color: #fff; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .username { font-weight: 900; font-size: 18px; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .pb-tag { font-size: 10px; color: #888; font-weight: 600; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; }
         .rank-badge { background: rgba(125, 95, 255, 0.15); color: var(--accent); padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid var(--accent); display: flex; align-items: center; gap: 5px; }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .stat-box { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); }
-        .label { font-size: 9px; color: #888; text-transform: uppercase; font-weight: 700; margin-bottom: 2px; }
+        .label { font-size: 9px; color: #888; text-transform: uppercase; font-weight: 700; }
         .value { font-size: 20px; font-weight: 800; }
-        .match-result { background: rgba(255,255,255,0.02); border-radius: 14px; padding: 12px; margin-bottom: 15px; border-left: 4px solid #444; }
-        .res-header { display: flex; justify-content: space-between; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; }
-        .vs-line { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; }
+        .match-result { background: rgba(255,255,255,0.02); border-radius: 14px; padding: 12px; margin-bottom: 15px; border-left: 4px solid #444; position: relative; }
+        .res-header { font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; color: #aaa; }
+        .player-row { display: flex; justify-content: space-between; align-items: center; margin: 4px 0; }
+        .p-name { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+        .p-time { font-size: 13px; font-weight: 900; color: var(--accent); }
         .progress-bar { background: rgba(255,255,255,0.1); height: 6px; border-radius: 10px; overflow: hidden; margin: 8px 0; }
         .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 1s ease; }
-        .footer { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 11px; font-weight: 700; color: #555; }
+        .footer { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 11px; font-weight: 700; color: #444; }
     </style>
 </head>
 <body>
@@ -28,49 +31,35 @@
 <div class="container">
     <div class="header">
         <div>
-            <div class="username">SIMGHST</div>
+            <div class="username">SIMGHST <span class="pb-tag" id="my-pb">PB: --:--</span></div>
             <div class="rank-badge"><span id="rank-icon">⬛</span> <span id="rank-text">COAL III</span></div>
         </div>
-        <div style="text-align: right;">
-            <div class="label">Peak Elo</div>
-            <div id="peak-elo" style="font-size: 14px; font-weight: 800; color: #aaa;">---</div>
-        </div>
+        <div style="text-align: right;"><div class="label">Peak</div><div id="peak-elo" style="font-size: 14px; font-weight: 800; color: #aaa;">---</div></div>
     </div>
 
     <div class="stats-grid">
-        <div class="stat-box">
-            <div class="label">Elo</div>
-            <div id="elo" class="value">---</div>
-        </div>
-        <div class="stat-box">
-            <div class="label">Win Rate</div>
-            <div id="wr" class="value">--%</div>
-        </div>
+        <div class="stat-box"><div class="label">Elo</div><div id="elo" class="value">---</div></div>
+        <div class="stat-box"><div class="label">Win Rate</div><div id="wr" class="value">--%</div></div>
     </div>
 
     <div id="match-card" class="match-result">
-        <div class="res-header">
-            <span id="res-type">Last Match</span>
-            <span id="opponent-name" style="opacity: 0.6;">VS ---</span>
+        <div class="res-header" id="res-type">Last Match</div>
+        <div class="player-row">
+            <span class="p-name">You</span>
+            <span class="p-time" id="my-res-time"></span>
         </div>
-        <div class="vs-line">
-            <span id="my-time">--:--</span>
-            <span style="font-size: 10px; color: #444;">VS</span>
-            <span id="opp-time">--:--</span>
+        <div class="player-row">
+            <span class="p-name" id="opp-display">Opponent <span class="pb-tag" id="opp-pb">PB: N/A</span></span>
+            <span class="p-time" id="opp-res-time" style="color:#888;"></span>
         </div>
-        <div id="res-detail" style="font-size: 11px; color: #888; margin-top: 5px; font-weight: 600;">Waiting for data...</div>
     </div>
 
     <div style="display:flex; justify-content:space-between; font-size:9px; color:#555; font-weight:800; text-transform:uppercase;">
-        <span>To Iron I</span>
-        <span id="prog-val">0/600</span>
+        <span>To Iron I</span><span id="prog-val">0/600</span>
     </div>
     <div class="progress-bar"><div id="bar-fill" class="bar-fill"></div></div>
 
-    <div class="footer">
-        <span id="record-pill">0W - 0L</span>
-        <span>V 0.2.2</span>
-    </div>
+    <div class="footer"><span id="record-pill">34W - 33L</span><span>V 0.2.4</span></div>
 </div>
 
 <script>
@@ -79,7 +68,7 @@
     const USER = 'simghst';
 
     function formatTime(ms) {
-        if (!ms || ms === 0) return "DNF";
+        if (!ms || ms === 0) return "N/A";
         const totalSec = Math.floor(ms / 1000);
         return `${Math.floor(totalSec / 60)}:${(totalSec % 60).toString().padStart(2, '0')}`;
     }
@@ -99,6 +88,7 @@
                 const s = u.statistics?.season || {};
                 document.getElementById('elo').innerText = u.eloRate;
                 document.getElementById('peak-elo').innerText = u.seasonPeakElo || u.eloRate;
+                document.getElementById('my-pb').innerText = `PB: ${formatTime(s.bestTime?.ranked)}`;
                 
                 const w = s.wins?.ranked || 0;
                 const l = s.loses?.ranked || 0;
@@ -106,8 +96,7 @@
                 document.getElementById('wr').innerText = total > 0 ? ((w/total)*100).toFixed(1) + "%" : "0.0%";
                 document.getElementById('record-pill').innerText = `${w}W - ${l}L`;
                 
-                const prog = Math.min((u.eloRate / 600) * 100, 100);
-                document.getElementById('bar-fill').style.width = prog + "%";
+                document.getElementById('bar-fill').style.width = Math.min((u.eloRate/600)*100, 100) + "%";
                 document.getElementById('prog-val').innerText = `${u.eloRate}/600`;
                 
                 const ranks = [[2000,"Netherite","🟣"],[1500,"Diamond","💎"],[1200,"Emerald","❇️"],[900,"Gold","🟡"],[600,"Iron","⚪"],[400,"Coal III","⬛"],[200,"Coal II","⬛"],[0,"Coal I","⬛"]];
@@ -120,33 +109,27 @@
                 const m = mRes.data[0];
                 const card = document.getElementById('match-card');
                 const me = m.players.find(p => p.nickname.toLowerCase() === USER.toLowerCase());
-                const opponent = m.players.find(p => p.nickname.toLowerCase() !== USER.toLowerCase());
+                const opp = m.players.find(p => p.nickname.toLowerCase() !== USER.toLowerCase());
                 
-                document.getElementById('opponent-name').innerText = `VS ${opponent.nickname.toUpperCase()}`;
+                // Set Opponent display
+                document.getElementById('opp-display').innerHTML = `${opp.nickname} <span class="pb-tag">PB: ${formatTime(opp.statistics?.season?.bestTime?.ranked)}</span>`;
                 
-                // MCSR Result Handling
                 const winnerUUID = m.result.uuid;
-                const myTime = m.result.time && winnerUUID === me.uuid ? m.result.time : 0; 
-                // Note: The API usually only provides the winner's time. 
-                
-                document.getElementById('my-time').innerText = winnerUUID === me.uuid ? formatTime(m.result.time) : "DNF";
-                document.getElementById('opp-time').innerText = winnerUUID === opponent.uuid ? formatTime(m.result.time) : "DNF";
+                const timeStr = formatTime(m.result.time);
+
+                document.getElementById('my-res-time').innerText = "";
+                document.getElementById('opp-res-time').innerText = "";
 
                 if (!winnerUUID) {
-                    document.getElementById('res-type').innerText = "Draw";
-                    document.getElementById('res-detail').innerText = "No one finished the run.";
+                    document.getElementById('res-type').innerText = "Last Match: Draw";
                     card.style.borderLeftColor = "var(--draw)";
-                } else if (m.forfeited) {
-                    document.getElementById('res-type').innerText = "Forfeit";
-                    document.getElementById('res-detail').innerText = "Match was abandoned.";
-                    card.style.borderLeftColor = "var(--loss)";
                 } else if (winnerUUID === me.uuid) {
-                    document.getElementById('res-type').innerText = "Victory";
-                    document.getElementById('res-detail').innerText = `You outpaced ${opponent.nickname}!`;
+                    document.getElementById('res-type').innerText = "Last Match: Win";
+                    document.getElementById('my-res-time').innerText = timeStr;
                     card.style.borderLeftColor = "var(--win)";
                 } else {
-                    document.getElementById('res-type').innerText = "Defeat";
-                    document.getElementById('res-detail').innerText = `${opponent.nickname} beat the game first.`;
+                    document.getElementById('res-type').innerText = "Last Match: Loss";
+                    document.getElementById('opp-res-time').innerText = timeStr;
                     card.style.borderLeftColor = "var(--loss)";
                 }
             }
