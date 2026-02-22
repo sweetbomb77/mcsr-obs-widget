@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST MCSR Stats v0.1.6</title>
+    <title>SIMGHST MCSR Stats v0.1.7</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -34,7 +34,7 @@
 </head>
 <body>
 <div class="card">
-    <div class="version-tag">V 0.1.6</div>
+    <div class="version-tag">V 0.1.7</div>
     <div class="header">
         <div id="rank-name" class="rank-tag">INIT...</div>
         <div style="font-size: 11px; opacity: 0.5; font-weight: 600;">SIMGHST</div>
@@ -47,7 +47,7 @@
         <div id="dot" class="dot"></div>
         <div class="info">
             <span id="m-status">CONNECTING</span>
-            <span id="m-detail">Waiting for API...</span>
+            <span id="m-detail">Fetching data...</span>
         </div>
     </div>
 </div>
@@ -66,17 +66,22 @@
         return "Diamond+";
     }
 
-    function startCountdown(seconds) {
+    function triggerCooldown(seconds) {
         clearInterval(countdownInterval);
         let remaining = seconds;
-        document.getElementById('m-status').innerText = "COOLDOWN";
-        document.getElementById('m-status').style.color = "var(--loss)";
+        const status = document.getElementById('m-status');
+        const detail = document.getElementById('m-detail');
+        
+        status.innerText = "RATE LIMITED";
+        status.style.color = "var(--loss)";
         
         countdownInterval = setInterval(() => {
             remaining--;
-            document.getElementById('m-detail').innerText = `Retrying in ${remaining}s...`;
+            detail.innerText = `Retrying in ${remaining}s...`;
             if (remaining <= 0) {
                 clearInterval(countdownInterval);
+                status.innerText = "RECONNECTING";
+                status.style.color = "white";
                 updateWidget();
             }
         }, 1000);
@@ -84,56 +89,73 @@
 
     async function updateWidget() {
         try {
+            // Call 1: User Profile
             const pRes = await fetch(`https://api.mcsrranked.com/users/${USER}?api_key=${KEY}`);
-            if (pRes.status === 429) { startCountdown(60); return; }
+            
+            if (pRes.status === 429) {
+                triggerCooldown(60);
+                return;
+            }
+
             const pData = await pRes.json();
             
             if (pData.status === "success") {
                 const u = pData.data;
+                const myUUID = u.uuid; // Capture UUID for match comparison
+                
+                // Update UI with Profile Stats
                 document.getElementById('elo').innerText = u.eloRate || "0";
                 document.getElementById('rank-name').innerText = getRankName(u.eloRate || 0);
+                
                 const s = u.statistics.season;
                 const total = (s.wins.total || 0) + (s.losses.total || 0);
                 document.getElementById('wr').innerText = total > 0 ? ((s.wins.total / total) * 100).toFixed(1) + "%" : "0%";
 
-                // Delay match call by 2s to prevent burst rate limit
+                // Call 2: Match History (Delayed to avoid burst limit)
                 setTimeout(async () => {
                     try {
                         const mRes = await fetch(`https://api.mcsrranked.com/users/${USER}/matches?api_key=${KEY}&count=1`);
+                        if (mRes.status === 429) return; // Silent fail for matches to keep elo visible
+
                         const mData = await mRes.json();
                         if (mData.status === "success" && mData.data.length > 0) {
                             const match = mData.data[0];
-                            const isWin = match.result.uuid === u.uuid;
-                            const isDraw = !match.result.uuid;
+                            const isWin = match.result.uuid === myUUID;
+                            const isDraw = match.result.uuid === null;
                             
                             const dot = document.getElementById('dot');
                             const status = document.getElementById('m-status');
+                            const detail = document.getElementById('m-detail');
                             
                             if (isDraw) {
                                 dot.style.background = 'var(--draw)';
                                 status.innerText = "LAST: DRAW";
                                 status.style.color = 'var(--draw)';
-                                document.getElementById('m-detail').innerText = "No winner declared";
+                                detail.innerText = "No winner declared";
                             } else {
                                 dot.style.background = isWin ? 'var(--win)' : 'var(--loss)';
                                 status.innerText = isWin ? "LAST: VICTORY" : "LAST: DEFEAT";
                                 status.style.color = isWin ? 'var(--win)' : 'var(--loss)';
+                                
                                 const timeStr = match.result.time ? new Date(match.result.time).toISOString().substr(14, 5) : "--:--";
-                                document.getElementById('m-detail').innerText = isWin ? `Finished in ${timeStr}` : (match.forfeited ? "Forfeited / Reset" : "Opponent was faster");
+                                detail.innerText = isWin ? `Finished in ${timeStr}` : (match.forfeited ? "Forfeited / Reset" : "Opponent was faster");
                             }
                         }
                     } catch (mErr) { console.warn("Match history error"); }
-                }, 2000);
+                }, 1500); 
             }
         } catch (err) {
-            startCountdown(60);
+            console.error("API Error:", err);
+            // Only trigger countdown if it's a real connection error
+            if (!navigator.onLine) {
+                document.getElementById('m-status').innerText = "OFFLINE";
+            }
         }
     }
 
-    // Initial load
     updateWidget();
-    // Regular refresh every 90 seconds (slightly safer than 60)
-    setInterval(updateWidget, 90000); 
+    // Refresh every 60s
+    setInterval(updateWidget, 60000); 
 </script>
 </body>
 </html>
