@@ -2,29 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST Stats v0.1.16.1</title>
+    <title>SIMGHST Stats v0.1.18</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root { --bg: rgba(10, 10, 15, 0.95); --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; }
         body { margin: 0; padding: 10px; font-family: 'Outfit', sans-serif; color: white; background: transparent; width: 340px; overflow: hidden; }
         .card { background: var(--bg); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); position: relative; display: flex; flex-direction: column; gap: 18px; }
         .version-tag { position: absolute; bottom: 8px; right: 12px; font-size: 8px; color: #444; font-weight: 800; }
-        .rank-container { display: flex; align-items: center; gap: 8px; }
         .rank-tag { background: rgba(125, 95, 255, 0.2); color: var(--accent); padding: 5px 12px; border-radius: 10px; font-size: 13px; font-weight: 800; border: 1px solid var(--accent); display: flex; align-items: center; gap: 6px; }
-        .rank-icon { font-size: 14px; }
         .grid { display: flex; justify-content: space-between; }
         .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
         .val { font-size: 26px; font-weight: 800; }
         .footer { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05); }
         .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--win); box-shadow: 0 0 10px var(--win); }
+        #rank-icon { width: 18px; height: 18px; display: inline-block; text-align: center; }
     </style>
 </head>
 <body>
 <div class="card">
-    <div class="version-tag">V 0.1.16.1</div>
+    <div class="version-tag">V 0.1.18</div>
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="rank-container">
-            <div id="rank-name" class="rank-tag"><span id="icon" class="rank-icon">⏳</span> <span>SYNCING</span></div>
+        <div class="rank-tag">
+            <span id="rank-icon">⬛</span>
+            <span id="rank-name">SYNCING</span>
         </div>
         <div style="font-size: 11px; opacity: 0.5; font-weight: 600;">SIMGHST</div>
     </div>
@@ -36,7 +36,7 @@
         <div class="dot"></div>
         <div class="info">
             <span id="m-status" style="font-weight:700; font-size:14px;">LIVE</span>
-            <span id="m-detail" style="font-size:11px; color:#aaa; margin-top:2px;">Syncing Season 9...</span>
+            <span id="m-detail" style="font-size:11px; color:#aaa; margin-top:2px;">Fetching Record...</span>
         </div>
     </div>
 </div>
@@ -46,15 +46,14 @@
     const KEY = 'lyidaeudwfggjkfydsdglvqaby839pyxmp8e2zovl4fg5mfhbu0zxz4qijhmzyn9';
     const USER = 'simghst';
 
-    function getRankInfo(elo) {
-        if (!elo) return { name: "Unranked", icon: "⚪" };
+    function getRank(elo) {
+        if (!elo) return { n: "Unranked", i: "⚪" };
         const ranks = [
             [2000, "Netherite", "🟣"], [1500, "Diamond", "💎"], [1200, "Emerald", "❇️"],
-            [900, "Gold", "🟡"], [600, "Iron", "⚪"], [400, "Coal III", "⬛"],
-            [200, "Coal II", "⬛"], [0, "Coal I", "⬛"]
+            [900, "Gold", "🟡"], [600, "Iron", "⚪"], [0, "Coal", "⬛"]
         ];
-        const r = ranks.find(r => elo >= r[0]) || [0, "Coal I", "⬛"];
-        return { name: r[1], icon: r[2] };
+        const r = ranks.find(r => elo >= r[0]);
+        return { n: r[1], i: r[2] };
     }
 
     async function update() {
@@ -65,23 +64,27 @@
             
             if (json.status === "success") {
                 const u = json.data;
-                const rInfo = getRankInfo(u.eloRate);
+                const r = getRank(u.eloRate);
                 
                 document.getElementById('elo').innerText = u.eloRate || 0;
-                document.getElementById('rank-name').querySelector('span:last-child').innerText = rInfo.name;
-                document.getElementById('icon').innerText = rInfo.icon;
+                document.getElementById('rank-name').innerText = r.n;
+                document.getElementById('rank-icon').innerText = r.i;
                 
-                // 2026 Season 9 Precise Pathing
+                // Detailed check for loss statistics in S9 structure
                 const s = u.statistics?.season || {};
-                const wins = s.wins?.ranked ?? s.wins?.total ?? s.wins ?? 0;
-                const losses = s.losses?.ranked ?? s.losses?.total ?? s.losses ?? 0;
+                
+                // We hunt for 'ranked' specifically, then 'total', then just the value
+                const wins = s.wins?.ranked ?? s.wins?.total ?? (typeof s.wins === 'number' ? s.wins : 0);
+                const losses = s.losses?.ranked ?? s.losses?.total ?? (typeof s.losses === 'number' ? s.losses : 0);
                 
                 const total = wins + losses;
-                document.getElementById('wr').innerText = total > 0 ? ((wins/total)*100).toFixed(1) + "%" : "0%";
-                document.getElementById('m-detail').innerText = `Season Record: ${wins}W - ${losses}L`;
+                const wr = total > 0 ? ((wins / total) * 100).toFixed(1) : "0";
+                
+                document.getElementById('wr').innerText = wr + "%";
+                document.getElementById('m-detail').innerText = `Record: ${wins}W - ${losses}L`;
             }
         } catch (e) {
-            document.getElementById('m-status').innerText = "DATA ERROR";
+            document.getElementById('m-status').innerText = "ERROR";
         }
     }
 
