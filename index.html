@@ -2,55 +2,47 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST Dashboard v0.2.8</title>
+    <title>SIMGHST Dashboard v1.0.0</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;900&display=swap" rel="stylesheet">
     <style>
-        /* Changed to solid colors */
-        :root { 
-            --bg: #0a0a0f; 
-            --card: #111116; /* Solid background */
-            --accent: #7d5fff; 
-            --win: #00ff88; 
-            --loss: #ff4757; 
-            --draw: #ffcc00; 
-        }
-        
+        :root { --bg: #0a0a0f; --card: #0d0d12; --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; --draw: #ffcc00; }
         body { margin: 0; padding: 10px; font-family: 'Outfit', sans-serif; color: white; background: transparent; width: 360px; }
+        .container { background: var(--card); border: 2px solid #1a1a25; border-radius: 28px; padding: 20px; box-shadow: 0 15px 40px rgba(0,0,0,1); position: relative; }
         
-        .container { 
-            background: var(--card); 
-            border: 1px solid #222; 
-            border-radius: 24px; 
-            padding: 18px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,1); /* Darker shadow for solid look */
-            position: relative; 
-        }
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .rank-badge { background: #151520; color: var(--accent); padding: 5px 12px; border-radius: 10px; font-size: 11px; font-weight: 900; border: 1px solid var(--accent); display: flex; align-items: center; gap: 6px; box-shadow: 0 0 15px rgba(125, 95, 255, 0.1); }
         
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .rank-badge { background: #1a1a25; color: var(--accent); padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid var(--accent); display: flex; align-items: center; gap: 5px; }
-        
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat-box { background: #181820; padding: 10px; border-radius: 14px; border: 1px solid #222; }
-        .label { font-size: 9px; color: #888; text-transform: uppercase; font-weight: 700; }
-        .value { font-size: 20px; font-weight: 800; }
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
+        .stat-box { background: #12121a; padding: 12px; border-radius: 16px; border: 1px solid #1c1c25; }
+        .label { font-size: 9px; color: #666; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
+        .value { font-size: 22px; font-weight: 900; }
 
-        .match-result { background: #15151d; border-radius: 18px; padding: 15px; margin-bottom: 15px; border-bottom: 3px solid #333; }
-        .res-status { text-align: center; font-size: 11px; font-weight: 900; letter-spacing: 2px; margin-bottom: 12px; }
+        /* Match Box - v1.0.0 Design */
+        .match-result { background: #111118; border-radius: 20px; padding: 16px; margin-bottom: 15px; border: 1px solid #1c1c25; border-bottom: 4px solid #333; position: relative; }
+        .res-status { text-align: center; font-size: 12px; font-weight: 900; letter-spacing: 3px; margin-bottom: 12px; }
         
-        .vs-container { display: flex; justify-content: space-between; align-items: flex-start; }
-        .vs-player { display: flex; flex-direction: column; width: 38%; }
+        .vs-container { display: flex; justify-content: space-between; align-items: flex-end; }
+        .vs-player { display: flex; flex-direction: column; width: 40%; }
         .vs-player.right { text-align: right; }
         
-        .p-name { font-size: 15px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .p-pb { font-size: 9px; color: #666; font-weight: 700; margin-top: 2px; }
+        .ff-label { font-size: 8px; font-weight: 900; color: var(--loss); text-transform: uppercase; margin-bottom: 1px; min-height: 10px; opacity: 0; transition: opacity 0.3s; }
+        .ff-visible { opacity: 1; }
         
-        .vs-center { display: flex; flex-direction: column; align-items: center; width: 24%; margin-top: -2px; }
-        .vs-divider { font-style: italic; font-weight: 900; color: #333; font-size: 16px; }
-        .finish-time { font-size: 19px; font-weight: 900; margin-top: 4px; }
+        .p-name { font-size: 16px; font-weight: 800; color: #fff; }
+        .p-pb { font-size: 9px; color: #555; font-weight: 700; margin-top: 2px; }
+        
+        .vs-center { display: flex; flex-direction: column; align-items: center; width: 20%; }
+        .vs-divider { font-style: italic; font-weight: 900; color: #222; font-size: 14px; }
+        .finish-time { font-size: 18px; font-weight: 900; margin-top: 2px; }
 
-        .progress-bar { background: #222; height: 6px; border-radius: 10px; overflow: hidden; margin: 8px 0; }
-        .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 1s ease; }
-        .footer { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #222; font-size: 11px; font-weight: 700; color: #444; }
+        /* Progress Bar */
+        .progress-bar { background: #1a1a25; height: 8px; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #a389ff); width: 0%; transition: width 1s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
+        
+        .footer { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid #1a1a25; font-size: 10px; font-weight: 800; color: #333; }
+        .v-tag { color: #555; }
     </style>
 </head>
 <body>
@@ -58,40 +50,43 @@
 <div class="container">
     <div class="header">
         <div class="rank-badge"><span id="rank-icon">⬛</span> <span id="rank-text">COAL III</span></div>
-        <div style="text-align: right;"><div class="label">Peak</div><div id="peak-elo" style="font-size: 14px; font-weight: 800; color: #aaa;">---</div></div>
+        <div style="text-align: right;"><div class="label">Peak Elo</div><div id="peak-elo" style="font-size: 14px; font-weight: 900; color: #aaa;">---</div></div>
     </div>
 
     <div class="stats-grid">
-        <div class="stat-box"><div class="label">Elo</div><div id="elo" class="value">---</div></div>
+        <div class="stat-box"><div class="label">Current Elo</div><div id="elo" class="value">---</div></div>
         <div class="stat-box"><div class="label">Win Rate</div><div id="wr" class="value">--%</div></div>
     </div>
 
     <div id="match-card" class="match-result">
-        <div class="res-status" id="res-type">LAST MATCH</div>
+        <div class="res-status" id="res-type">SYNCING DATA</div>
         <div class="vs-container">
             <div class="vs-player">
+                <div id="my-ff" class="ff-label">FORFEITED</div>
                 <span class="p-name" style="color: var(--accent);">Simghst</span>
                 <span class="p-pb" id="my-match-pb">PB: --:--</span>
             </div>
-
             <div class="vs-center">
                 <div class="vs-divider">VS</div>
                 <div class="finish-time" id="match-finish-time"></div>
             </div>
-
             <div class="vs-player right">
-                <span class="p-name" id="opp-name">Opponent</span>
+                <div id="opp-ff" class="ff-label">FORFEITED</div>
+                <span class="p-name" id="opp-name">---</span>
                 <span class="p-pb" id="opp-pb">PB: N/A</span>
             </div>
         </div>
     </div>
 
-    <div style="display:flex; justify-content:space-between; font-size:9px; color:#555; font-weight:800; text-transform:uppercase;">
+    <div style="display:flex; justify-content:space-between; font-size:9px; color:#444; font-weight:900; text-transform:uppercase;">
         <span>To Iron I</span><span id="prog-val">0/600</span>
     </div>
     <div class="progress-bar"><div id="bar-fill" class="bar-fill"></div></div>
 
-    <div class="footer"><span id="record-pill">34W - 33L</span><span>V 0.2.8</span></div>
+    <div class="footer">
+        <span id="record-pill" style="color:#666">0W - 0L</span>
+        <span class="v-tag">VERSION 1.0.0</span>
+    </div>
 </div>
 
 <script>
@@ -106,9 +101,10 @@
     }
 
     async function update() {
+        const nocache = `?t=${new Date().getTime()}`;
         try {
-            const pUrl = `https://api.mcsrranked.com/users/${USER}?api_key=${KEY}`;
-            const mUrl = `https://api.mcsrranked.com/users/${USER}/matches?count=1&api_key=${KEY}`;
+            const pUrl = `https://api.mcsrranked.com/users/${USER}?api_key=${KEY}&cache=${nocache}`;
+            const mUrl = `https://api.mcsrranked.com/users/${USER}/matches?count=1&api_key=${KEY}&cache=${nocache}`;
             
             const [pRes, mRes] = await Promise.all([
                 fetch(`${BRIDGE}?url=${encodeURIComponent(pUrl)}`).then(r => r.json()),
@@ -129,11 +125,15 @@
                 
                 document.getElementById('bar-fill').style.width = Math.min((u.eloRate/600)*100, 100) + "%";
                 document.getElementById('prog-val').innerText = `${u.eloRate}/600`;
+                
+                const ranks = [[2000,"Netherite","🟣"],[1500,"Diamond","💎"],[1200,"Emerald","❇️"],[900,"Gold","🟡"],[600,"Iron","⚪"],[400,"Coal III","⬛"],[200,"Coal II","⬛"],[0,"Coal I","⬛"]];
+                const r = ranks.find(rk => u.eloRate >= rk[0]) || [0,"Coal I","⬛"];
+                document.getElementById('rank-text').innerText = r[1];
+                document.getElementById('rank-icon').innerText = r[2];
             }
 
             if (mRes.status === "success" && mRes.data.length > 0) {
                 const m = mRes.data[0];
-                const card = document.getElementById('match-card');
                 const me = m.players.find(p => p.nickname.toLowerCase() === USER.toLowerCase());
                 const opp = m.players.find(p => p.nickname.toLowerCase() !== USER.toLowerCase());
                 
@@ -142,32 +142,37 @@
                 
                 const winnerUUID = m.result.uuid;
                 const timeEl = document.getElementById('match-finish-time');
-                const timeStr = formatTime(m.result.time);
+                const myFF = document.getElementById('my-ff');
+                const oppFF = document.getElementById('opp-ff');
+                const card = document.getElementById('match-card');
+                
+                myFF.classList.remove('ff-visible');
+                oppFF.classList.remove('ff-visible');
 
                 if (!winnerUUID) {
-                    document.getElementById('res-type').innerText = "DRAW";
+                    document.getElementById('res-type').innerText = "LAST MATCH: DRAW";
                     document.getElementById('res-type').style.color = "var(--draw)";
                     timeEl.innerText = "";
                     card.style.borderBottomColor = "var(--draw)";
-                } else if (winnerUUID === me.uuid) {
-                    document.getElementById('res-type').innerText = "WIN";
-                    document.getElementById('res-type').style.color = "var(--win)";
-                    timeEl.innerText = timeStr;
-                    timeEl.style.color = "var(--win)";
-                    card.style.borderBottomColor = "var(--win)";
                 } else {
-                    document.getElementById('res-type').innerText = "LOSS";
-                    document.getElementById('res-type').style.color = "var(--loss)";
-                    timeEl.innerText = timeStr;
-                    timeEl.style.color = "var(--loss)";
-                    card.style.borderBottomColor = "var(--loss)";
+                    const win = winnerUUID === me.uuid;
+                    document.getElementById('res-type').innerText = win ? "LAST MATCH: WIN" : "LAST MATCH: LOSS";
+                    document.getElementById('res-type').style.color = win ? "var(--win)" : "var(--loss)";
+                    timeEl.innerText = formatTime(m.result.time);
+                    timeEl.style.color = win ? "var(--win)" : "var(--loss)";
+                    card.style.borderBottomColor = win ? "var(--win)" : "var(--loss)";
+                    
+                    if (m.forfeited) {
+                        if (win) oppFF.classList.add('ff-visible');
+                        else myFF.classList.add('ff-visible');
+                    }
                 }
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("Sync Error", e); }
     }
 
     update();
-    setInterval(update, 60000);
+    setInterval(update, 30000); 
 </script>
 </body>
 </html>
