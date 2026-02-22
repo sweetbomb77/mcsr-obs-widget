@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST MCSR Stats v0.1.8</title>
+    <title>SIMGHST Stats v0.1.9</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root { --bg: rgba(10, 10, 15, 0.95); --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; --draw: #ffa502; }
@@ -23,9 +23,9 @@
 </head>
 <body>
 <div class="card">
-    <div class="version-tag">V 0.1.8</div>
+    <div class="version-tag">V 0.1.9</div>
     <div class="header">
-        <div id="rank-name" class="rank-tag">SYNCING...</div>
+        <div id="rank-name" class="rank-tag">WAITING...</div>
         <div style="font-size: 11px; opacity: 0.5;">SIMGHST</div>
     </div>
     <div class="grid">
@@ -45,34 +45,41 @@
     const KEY = 'lyidaeudwfggjkfydsdglvqaby839pyxmp8e2zovl4fg5mfhbu0zxz4qijhmzyn9';
     const USER = 'simghst';
 
+    function log(msg, data = "") {
+        console.log(`[MCSR DEBUG] ${msg}`, data);
+        document.getElementById('m-detail').innerText = msg;
+    }
+
     function getRank(elo) {
         if (!elo) return "Unranked";
         const ranks = [[1500,"Diamond+"],[1400,"Emerald III"],[1300,"Emerald II"],[1200,"Emerald I"],[1100,"Gold III"],[1000,"Gold II"],[900,"Gold I"],[800,"Iron III"],[700,"Iron II"],[600,"Iron I"],[400,"Coal III"],[200,"Coal II"],[0,"Coal I"]];
         return ranks.find(r => elo >= r[0])[1];
     }
 
-    async function fetchData(url) {
-        // Try direct first, then fallback to a CORS proxy if it fails
+    async function safeFetch(url) {
+        // We use a proxy because MCSR blocks direct browser requests
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&timestamp=${Date.now()}`;
         try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(response.status);
-            return await response.json();
+            log("Fetching from Proxy...");
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const json = await response.json();
+            return JSON.parse(json.contents);
         } catch (e) {
-            console.warn("Direct fetch failed, trying proxy...");
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-            const proxied = await fetch(proxyUrl);
-            const data = await proxied.json();
-            return JSON.parse(data.contents);
+            log("Fetch Failed", e.message);
+            throw e;
         }
     }
 
     async function update() {
         try {
-            const profileUrl = `https://api.mcsrranked.com/users/${USER}?api_key=${KEY}`;
-            const pData = await fetchData(profileUrl);
+            log("Updating Profile...");
+            const pData = await safeFetch(`https://api.mcsrranked.com/users/${USER}?api_key=${KEY}`);
             
-            if (pData.status === "success") {
+            if (pData && pData.status === "success") {
                 const u = pData.data;
+                log("Profile Received", u.nickname);
+                
                 document.getElementById('elo').innerText = u.eloRate || "0";
                 document.getElementById('rank-name').innerText = getRank(u.eloRate);
                 
@@ -81,11 +88,10 @@
                 const loss = s.losses.total || 0;
                 document.getElementById('wr').innerText = (win+loss) > 0 ? ((win/(win+loss))*100).toFixed(1)+"%" : "0%";
 
-                // Update Match
-                const matchUrl = `https://api.mcsrranked.com/users/${USER}/matches?api_key=${KEY}&count=1`;
-                const mData = await fetchData(matchUrl);
+                log("Updating Matches...");
+                const mData = await safeFetch(`https://api.mcsrranked.com/users/${USER}/matches?api_key=${KEY}&count=1`);
                 
-                if (mData.status === "success" && mData.data.length > 0) {
+                if (mData && mData.status === "success" && mData.data.length > 0) {
                     const m = mData.data[0];
                     const winMatch = m.result.uuid === u.uuid;
                     const drawMatch = m.result.uuid === null;
@@ -99,11 +105,14 @@
                     
                     const time = m.result.time ? new Date(m.result.time).toISOString().substr(14, 5) : "Ranked";
                     document.getElementById('m-detail').innerText = winMatch ? `Finished in ${time}` : (m.forfeited ? "Forfeited" : "Opponent faster");
+                    log("Update Complete");
                 }
+            } else {
+                log("API Error", pData ? pData.data : "Unknown");
             }
         } catch (err) {
-            document.getElementById('m-status').innerText = "OFFLINE";
-            document.getElementById('m-detail').innerText = "Retrying shortly...";
+            document.getElementById('m-status').innerText = "ERROR";
+            log("Check Console Logs");
         }
     }
 
