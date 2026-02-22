@@ -10,47 +10,37 @@
             --accent: #7d5fff;
             --win: #00ff88;
             --loss: #ff4757;
-            --draw: #ffa502;
         }
-
-        body { margin: 0; padding: 10px; font-family: 'Outfit', sans-serif; color: white; background: transparent; width: 340px; }
-        
+        body { margin: 0; padding: 10px; font-family: 'Outfit', sans-serif; color: white; background: transparent; width: 340px; overflow: hidden; }
         .card {
             background: var(--bg); backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1); border-radius: 18px;
             padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .rank-tag { background: rgba(125, 95, 255, 0.2); color: var(--accent); padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 800; border: 1px solid var(--accent); }
-        
         .grid { display: flex; justify-content: space-between; margin-bottom: 15px; }
         .label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
         .val { font-size: 24px; font-weight: 800; }
-
         .footer { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 10px; }
         .dot { width: 8px; height: 8px; border-radius: 50%; background: #555; }
         .info { display: flex; flex-direction: column; }
         #m-status { font-size: 13px; font-weight: 700; }
         #m-detail { font-size: 11px; color: #888; }
-        
         .color-win { color: var(--win); }
         .color-loss { color: var(--loss); }
     </style>
 </head>
 <body>
-
 <div class="card">
     <div class="header">
         <div id="rank-name" class="rank-tag">WAITING...</div>
         <div style="font-size: 10px; opacity: 0.5;">SIMGHST</div>
     </div>
-
     <div class="grid">
         <div><div class="label">ELO</div><div id="elo" class="val">---</div></div>
         <div style="text-align:right;"><div class="label">WINRATE</div><div id="wr" class="val">--%</div></div>
     </div>
-
     <div class="footer">
         <div id="dot" class="dot"></div>
         <div class="info">
@@ -61,10 +51,11 @@
 </div>
 
 <script>
-    const KEY = 'mvsvvoa14gj85103mabtpz6uwc9q5xhehci3boss3dsgxo10kutse97rtabykedz';
+    const KEY = 'lyidaeudwfggjkfydsdglvqaby839pyxmp8e2zovl4fg5mfhbu0zxz4qijhmzyn9';
     const USER = 'simghst';
 
     function getRank(elo) {
+        if (elo === 0) return "Unranked";
         if (elo < 200) return "Coal I"; if (elo < 400) return "Coal II"; if (elo < 600) return "Coal III";
         if (elo < 700) return "Iron I"; if (elo < 800) return "Iron II"; if (elo < 900) return "Iron III";
         if (elo < 1000) return "Gold I"; if (elo < 1100) return "Gold II"; if (elo < 1200) return "Gold III";
@@ -73,39 +64,39 @@
 
     async function getData() {
         try {
-            // Get Profile
             const p = await fetch(`https://api.mcsrranked.com/users/${USER}?api_key=${KEY}`);
-            if (p.status === 429) throw new Error("Rate Limited");
+            if (!p.ok) throw new Error("API Error");
             const pd = await p.json();
 
             if (pd.status === "success") {
-                const elo = pd.data.eloRate || 0;
+                const data = pd.data;
+                const elo = data.eloRate || 0;
                 document.getElementById('elo').innerText = elo;
                 document.getElementById('rank-name').innerText = getRank(elo);
-                const s = pd.data.statistics.season;
-                const wr = (s.wins.total + s.losses.total) > 0 ? ((s.wins.total / (s.wins.total + s.losses.total)) * 100).toFixed(1) : 0;
-                document.getElementById('wr').innerText = wr + "%";
-            }
+                const s = data.statistics.season;
+                const total = s.wins.total + s.losses.total;
+                document.getElementById('wr').innerText = total > 0 ? ((s.wins.total / total) * 100).toFixed(1) + "%" : "0%";
 
-            // Get Last Match
-            const m = await fetch(`https://api.mcsrranked.com/users/${USER}/matches?api_key=${KEY}&count=1`);
-            const md = await m.json();
-            if (md.data && md.data.length > 0) {
-                const match = md.data[0];
-                const win = match.result.uuid === pd.data.uuid;
-                document.getElementById('dot').style.background = win ? 'var(--win)' : 'var(--loss)';
-                document.getElementById('m-status').innerText = win ? "LAST: VICTORY" : "LAST: DEFEAT";
-                document.getElementById('m-status').className = win ? "color-win" : "color-loss";
-                document.getElementById('m-detail').innerText = win ? "Finished the run" : (match.forfeited ? "Forfeited" : "Opponent was faster");
+                // Get Last Match
+                const m = await fetch(`https://api.mcsrranked.com/users/${USER}/matches?api_key=${KEY}&count=1`);
+                const md = await m.json();
+                if (md.data && md.data.length > 0) {
+                    const match = md.data[0];
+                    const win = match.result.uuid === data.uuid;
+                    document.getElementById('dot').style.background = win ? 'var(--win)' : 'var(--loss)';
+                    document.getElementById('m-status').innerText = win ? "LAST: VICTORY" : "LAST: DEFEAT";
+                    document.getElementById('m-status').className = win ? "color-win" : "color-loss";
+                    document.getElementById('m-detail').innerText = win ? "Finished the run" : (match.forfeited ? "Forfeited" : "Opponent was faster");
+                }
             }
         } catch (e) {
-            document.getElementById('m-status').innerText = "COOLDOWN";
-            document.getElementById('m-detail').innerText = "API Limit Hit. Waiting...";
+            document.getElementById('m-status').innerText = "LIMIT REACHED";
+            document.getElementById('m-detail').innerText = "Wait 1 min...";
         }
     }
 
     getData();
-    setInterval(getData, 60000); // Only refresh every 60 seconds to stop the errors
+    setInterval(getData, 60000); // 1 minute interval to stay safe
 </script>
 </body>
 </html>
