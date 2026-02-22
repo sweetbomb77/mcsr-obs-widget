@@ -6,7 +6,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-glass: rgba(10, 10, 15, 0.9);
+            --bg-glass: rgba(10, 10, 15, 0.95);
             --accent: #7d5fff;
             --text-main: #ffffff;
             --text-dim: #a0a0a0;
@@ -16,30 +16,30 @@
             --border-radius: 18px;
         }
 
-        body { margin: 0; padding: 20px; font-family: 'Outfit', sans-serif; color: var(--text-main); background: transparent; width: 340px; }
+        body { margin: 0; padding: 10px; font-family: 'Outfit', sans-serif; color: var(--text-main); background: transparent; width: 340px; overflow: hidden; }
         .widget-card {
             background: var(--bg-glass); backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius);
-            padding: 22px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-            display: flex; flex-direction: column; gap: 18px;
+            padding: 20px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            display: flex; flex-direction: column; gap: 15px;
         }
         .header { display: flex; justify-content: space-between; align-items: center; }
         .rank-badge {
             background: linear-gradient(135deg, rgba(125, 95, 255, 0.3), rgba(125, 95, 255, 0.1));
-            color: var(--accent); padding: 5px 12px; border-radius: 10px;
-            font-size: 13px; font-weight: 800; text-transform: uppercase; border: 1px solid rgba(125, 95, 255, 0.3);
+            color: var(--accent); padding: 4px 10px; border-radius: 8px;
+            font-size: 12px; font-weight: 800; text-transform: uppercase; border: 1px solid rgba(125, 95, 255, 0.2);
         }
         .stats-row { display: flex; justify-content: space-between; }
-        .stat-item .label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-        .stat-item .value { font-size: 26px; font-weight: 800; color: #fff; }
+        .stat-item .label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+        .stat-item .value { font-size: 24px; font-weight: 800; color: #fff; }
         .match-footer {
-            background: rgba(255, 255, 255, 0.04); border-radius: 14px; padding: 14px;
-            display: flex; align-items: center; gap: 14px; border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 12px;
+            display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #444; }
         .match-info { display: flex; flex-direction: column; }
-        #match-status { font-size: 14px; font-weight: 700; }
-        #match-detail { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+        #match-status { font-size: 13px; font-weight: 700; }
+        #match-detail { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
         .color-win { color: var(--win) !important; }
         .color-loss { color: var(--loss) !important; }
         .color-draw { color: var(--draw) !important; }
@@ -65,10 +65,10 @@
     </div>
 
     <div class="match-footer">
-        <div id="status-dot" class="status-dot" style="background-color: #444;"></div>
+        <div id="status-dot" class="status-dot"></div>
         <div class="match-info">
-            <span id="match-status">Connecting...</span>
-            <span id="match-detail">Syncing data...</span>
+            <span id="match-status">Syncing...</span>
+            <span id="match-detail">Waiting for match data</span>
         </div>
     </div>
 </div>
@@ -78,6 +78,7 @@
     const USERNAME = 'simghst';
 
     function getRankName(elo) {
+        if (elo === 0) return "Unranked";
         if (elo < 200) return "Coal I";
         if (elo < 400) return "Coal II";
         if (elo < 600) return "Coal III";
@@ -90,17 +91,14 @@
         if (elo < 1300) return "Emerald I";
         if (elo < 1400) return "Emerald II";
         if (elo < 1500) return "Emerald III";
-        if (elo < 1650) return "Diamond I";
-        if (elo < 1800) return "Diamond II";
-        if (elo < 2000) return "Diamond III";
-        return "Netherite";
+        return "Diamond+";
     }
 
     async function updateStats() {
         try {
-            const url = `https://api.mcsrranked.com/users/${USERNAME}?api_key=${API_KEY}`;
-            const profileReq = await fetch(url);
-            const pData = await profileReq.json();
+            // Fetch Profile Data
+            const pRes = await fetch(`https://api.mcsrranked.com/users/${USERNAME}?api_key=${API_KEY}`);
+            const pData = await pRes.json();
 
             if (pData.status === "success") {
                 const user = pData.data;
@@ -109,20 +107,31 @@
                 document.getElementById('rank-text').innerText = getRankName(currentElo);
                 
                 const stats = user.statistics.season;
-                const total = (stats.wins.total || 0) + (stats.losses.total || 0);
-                const wr = total > 0 ? ((stats.wins.total / total) * 100).toFixed(1) : 0;
+                const wins = stats.wins.total || 0;
+                const losses = stats.losses.total || 0;
+                const wr = (wins + losses) > 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : "0.0";
                 document.getElementById('wr-val').innerText = `${wr}%`;
-
-                // Try fetching last match
-                const mReq = await fetch(`https://api.mcsrranked.com/users/${USERNAME}/matches?api_key=${API_KEY}&count=1`);
-                const mData = await mReq.json();
-                if (mData.status === "success" && mData.data.length > 0) {
-                    processLastMatch(mData.data[0]);
-                }
             }
+
+            // Fetch Match Data (Wrapped in its own try/catch to prevent total failure)
+            try {
+                const mRes = await fetch(`https://api.mcsrranked.com/users/${USERNAME}/matches?api_key=${API_KEY}&count=1`);
+                const mData = await mRes.json();
+                
+                if (mData.status === "success" && mData.data && mData.data.length > 0) {
+                    processLastMatch(mData.data[0]);
+                } else {
+                    document.getElementById('match-status').innerText = "NO MATCHES";
+                    document.getElementById('match-detail').innerText = "Play a ranked match!";
+                }
+            } catch (mErr) {
+                console.log("Match fetch failed (likely rate limit)");
+            }
+
         } catch (err) {
-            document.getElementById('match-status').innerText = "API Error";
-            console.error(err);
+            document.getElementById('match-status').innerText = "API ERROR";
+            document.getElementById('match-status').className = "color-loss";
+            document.getElementById('match-detail').innerText = "Rate limited? Waiting...";
         }
     }
 
@@ -138,22 +147,22 @@
             status.innerText = "LAST MATCH: WIN";
             status.classList.add("color-win");
             const time = new Date(match.result.time).toISOString().substr(14, 5);
-            detail.innerText = `Finished in ${time}`;
+            detail.innerText = `Won in ${time}`;
         } else if (!match.result.uuid) {
             dot.style.backgroundColor = 'var(--draw)';
             status.innerText = "LAST MATCH: DRAW";
             status.classList.add("color-draw");
-            detail.innerText = "No winner declared";
+            detail.innerText = "Match timed out / Draw";
         } else {
             dot.style.backgroundColor = 'var(--loss)';
             status.innerText = "LAST MATCH: LOSS";
             status.classList.add("color-loss");
-            detail.innerText = match.forfeited ? "Forfeited / Reset" : "Opponent finished first";
+            detail.innerText = match.forfeited ? "You forfeited/reset" : "Opponent finished first";
         }
     }
 
     updateStats();
-    setInterval(updateStats, 30000); 
+    setInterval(updateStats, 45000); // 45 seconds to be extra safe with rate limits
 </script>
 </body>
 </html>
