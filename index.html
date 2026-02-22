@@ -2,25 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST Dashboard v0.2.4</title>
+    <title>SIMGHST Dashboard v0.2.5</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;900&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #0a0a0f; --card: rgba(20, 20, 30, 0.95); --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; --draw: #ffcc00; }
-        body { margin: 0; padding: 10px; font-family: 'Outfit', sans-serif; color: white; background: transparent; width: 350px; }
+        body { margin: 0; padding: 10px; font-family: 'Outfit', sans-serif; color: white; background: transparent; width: 360px; }
         .container { background: var(--card); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 18px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); position: relative; }
+        
+        /* Top Header */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .username { font-weight: 900; font-size: 18px; color: #fff; display: flex; align-items: center; gap: 8px; }
-        .pb-tag { font-size: 10px; color: #888; font-weight: 600; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; }
         .rank-badge { background: rgba(125, 95, 255, 0.15); color: var(--accent); padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid var(--accent); display: flex; align-items: center; gap: 5px; }
+        
+        /* Stats Grid */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .stat-box { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); }
         .label { font-size: 9px; color: #888; text-transform: uppercase; font-weight: 700; }
         .value { font-size: 20px; font-weight: 800; }
-        .match-result { background: rgba(255,255,255,0.02); border-radius: 14px; padding: 12px; margin-bottom: 15px; border-left: 4px solid #444; position: relative; }
-        .res-header { font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; color: #aaa; }
-        .player-row { display: flex; justify-content: space-between; align-items: center; margin: 4px 0; }
-        .p-name { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-        .p-time { font-size: 13px; font-weight: 900; color: var(--accent); }
+
+        /* Versus Match Box */
+        .match-result { background: rgba(255,255,255,0.02); border-radius: 18px; padding: 15px; margin-bottom: 15px; border-bottom: 3px solid #444; }
+        .res-status { text-align: center; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+        
+        .vs-container { display: flex; justify-content: space-between; align-items: center; position: relative; }
+        .vs-player { display: flex; flex-direction: column; width: 42%; }
+        .vs-player.right { text-align: right; }
+        
+        .p-name { font-size: 14px; font-weight: 900; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .p-pb { font-size: 9px; color: #666; font-weight: 700; margin-top: 2px; }
+        .p-time { font-size: 16px; font-weight: 900; color: var(--accent); margin-top: 4px; height: 20px; }
+        
+        .vs-divider { font-style: italic; font-weight: 900; color: rgba(255,255,255,0.1); font-size: 20px; }
+
+        /* Progress Bar */
         .progress-bar { background: rgba(255,255,255,0.1); height: 6px; border-radius: 10px; overflow: hidden; margin: 8px 0; }
         .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 1s ease; }
         .footer { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 11px; font-weight: 700; color: #444; }
@@ -30,11 +43,8 @@
 
 <div class="container">
     <div class="header">
-        <div>
-            <div class="username">SIMGHST <span class="pb-tag" id="my-pb">PB: --:--</span></div>
-            <div class="rank-badge"><span id="rank-icon">⬛</span> <span id="rank-text">COAL III</span></div>
-        </div>
-        <div style="text-align: right;"><div class="label">Peak</div><div id="peak-elo" style="font-size: 14px; font-weight: 800; color: #aaa;">---</div></div>
+        <div class="rank-badge"><span id="rank-icon">⬛</span> <span id="rank-text">COAL III</span></div>
+        <div style="text-align: right;"><div class="label">Season Peak</div><div id="peak-elo" style="font-size: 14px; font-weight: 800; color: #aaa;">---</div></div>
     </div>
 
     <div class="stats-grid">
@@ -43,14 +53,21 @@
     </div>
 
     <div id="match-card" class="match-result">
-        <div class="res-header" id="res-type">Last Match</div>
-        <div class="player-row">
-            <span class="p-name">You</span>
-            <span class="p-time" id="my-res-time"></span>
-        </div>
-        <div class="player-row">
-            <span class="p-name" id="opp-display">Opponent <span class="pb-tag" id="opp-pb">PB: N/A</span></span>
-            <span class="p-time" id="opp-res-time" style="color:#888;"></span>
+        <div class="res-status" id="res-type">Last Match</div>
+        <div class="vs-container">
+            <div class="vs-player">
+                <span class="p-name" style="color: var(--accent);">SIMGHST</span>
+                <span class="p-pb" id="my-match-pb">PB: --:--</span>
+                <span class="p-time" id="my-res-time"></span>
+            </div>
+
+            <div class="vs-divider">VS</div>
+
+            <div class="vs-player right">
+                <span class="p-name" id="opp-name">---</span>
+                <span class="p-pb" id="opp-pb">PB: N/A</span>
+                <span class="p-time" id="opp-res-time"></span>
+            </div>
         </div>
     </div>
 
@@ -59,7 +76,7 @@
     </div>
     <div class="progress-bar"><div id="bar-fill" class="bar-fill"></div></div>
 
-    <div class="footer"><span id="record-pill">34W - 33L</span><span>V 0.2.4</span></div>
+    <div class="footer"><span id="record-pill">34W - 33L</span><span>V 0.2.5</span></div>
 </div>
 
 <script>
@@ -88,12 +105,13 @@
                 const s = u.statistics?.season || {};
                 document.getElementById('elo').innerText = u.eloRate;
                 document.getElementById('peak-elo').innerText = u.seasonPeakElo || u.eloRate;
-                document.getElementById('my-pb').innerText = `PB: ${formatTime(s.bestTime?.ranked)}`;
+                
+                const myPB = formatTime(s.bestTime?.ranked);
+                document.getElementById('my-match-pb').innerText = `PB: ${myPB}`;
                 
                 const w = s.wins?.ranked || 0;
                 const l = s.loses?.ranked || 0;
-                const total = w + l;
-                document.getElementById('wr').innerText = total > 0 ? ((w/total)*100).toFixed(1) + "%" : "0.0%";
+                document.getElementById('wr').innerText = (w+l) > 0 ? ((w/(w+l))*100).toFixed(1) + "%" : "0.0%";
                 document.getElementById('record-pill').innerText = `${w}W - ${l}L`;
                 
                 document.getElementById('bar-fill').style.width = Math.min((u.eloRate/600)*100, 100) + "%";
@@ -111,8 +129,11 @@
                 const me = m.players.find(p => p.nickname.toLowerCase() === USER.toLowerCase());
                 const opp = m.players.find(p => p.nickname.toLowerCase() !== USER.toLowerCase());
                 
-                // Set Opponent display
-                document.getElementById('opp-display').innerHTML = `${opp.nickname} <span class="pb-tag">PB: ${formatTime(opp.statistics?.season?.bestTime?.ranked)}</span>`;
+                document.getElementById('opp-name').innerText = opp.nickname;
+                
+                // Get Opponent PB
+                const oppPB = opp.statistics?.season?.bestTime?.ranked;
+                document.getElementById('opp-pb').innerText = `PB: ${formatTime(oppPB)}`;
                 
                 const winnerUUID = m.result.uuid;
                 const timeStr = formatTime(m.result.time);
@@ -121,16 +142,19 @@
                 document.getElementById('opp-res-time').innerText = "";
 
                 if (!winnerUUID) {
-                    document.getElementById('res-type').innerText = "Last Match: Draw";
-                    card.style.borderLeftColor = "var(--draw)";
+                    document.getElementById('res-type').innerText = "DRAW";
+                    document.getElementById('res-type').style.color = "var(--draw)";
+                    card.style.borderBottomColor = "var(--draw)";
                 } else if (winnerUUID === me.uuid) {
-                    document.getElementById('res-type').innerText = "Last Match: Win";
+                    document.getElementById('res-type').innerText = "WIN";
+                    document.getElementById('res-type').style.color = "var(--win)";
                     document.getElementById('my-res-time').innerText = timeStr;
-                    card.style.borderLeftColor = "var(--win)";
+                    card.style.borderBottomColor = "var(--win)";
                 } else {
-                    document.getElementById('res-type').innerText = "Last Match: Loss";
+                    document.getElementById('res-type').innerText = "LOSS";
+                    document.getElementById('res-type').style.color = "var(--loss)";
                     document.getElementById('opp-res-time').innerText = timeStr;
-                    card.style.borderLeftColor = "var(--loss)";
+                    card.style.borderBottomColor = "var(--loss)";
                 }
             }
         } catch (e) { console.error(e); }
