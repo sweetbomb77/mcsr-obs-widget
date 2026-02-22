@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST Stats v0.1.14</title>
+    <title>SIMGHST Stats v0.1.13.2</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root { --bg: rgba(10, 10, 15, 0.95); --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; }
@@ -14,29 +14,27 @@
         .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
         .val { font-size: 26px; font-weight: 800; }
         .footer { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05); }
-        .dot { width: 10px; height: 10px; border-radius: 50%; background: #444; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: #00ff88; box-shadow: 0 0 10px var(--win); }
         .debug-code { font-family: monospace; font-size: 9px; color: #555; position: absolute; top: 8px; right: 12px; }
-        #m-status { font-size: 14px; font-weight: 700; }
-        #m-detail { font-size: 11px; color: #aaa; margin-top: 2px; }
     </style>
 </head>
 <body>
 <div class="card">
-    <div class="version-tag">V 0.1.13.1</div>
-    <div class="debug-code" id="http-code">HTTP: --</div>
+    <div class="version-tag">V 0.1.13.2</div>
+    <div class="debug-code" id="http-code">HTTP: 200</div>
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div id="rank-name" class="rank-tag">SYNCING...</div>
+        <div id="rank-name" class="rank-tag">COAL III</div>
         <div style="font-size: 11px; opacity: 0.5; font-weight: 600;">SIMGHST</div>
     </div>
     <div class="grid">
-        <div><div class="label">Elo</div><div id="elo" class="val">---</div></div>
+        <div><div class="label">Elo</div><div id="elo" class="val">565</div></div>
         <div style="text-align:right;"><div class="label">Winrate</div><div id="wr" class="val">--%</div></div>
     </div>
     <div class="footer">
-        <div id="dot" class="dot"></div>
+        <div class="dot"></div>
         <div class="info">
-            <span id="m-status">IDLE</span>
-            <span id="m-detail">Waiting for sync...</span>
+            <span id="m-status" style="font-weight:700; font-size:14px;">LIVE</span>
+            <span id="m-detail" style="font-size:11px; color:#aaa; margin-top:2px;">Record: --W - --L</span>
         </div>
     </div>
 </div>
@@ -49,10 +47,13 @@
     function getRank(elo) {
         if (!elo) return "Unranked";
         const ranks = [
-            [2000,"Netherite"],[1500,"Diamond"],[1200,"Emerald"],[900,"Gold"],
-            [600,"Iron"],[400,"Coal III"],[200,"Coal II"],[0,"Coal I"]
+            [2000,"Netherite"],[1800,"Diamond III"],[1700,"Diamond II"],[1600,"Diamond I"],
+            [1500,"Emerald III"],[1400,"Emerald II"],[1300,"Emerald I"],
+            [1200,"Gold III"],[1100,"Gold II"],[1000,"Gold I"],
+            [900,"Iron III"],[800,"Iron II"],[700,"Iron I"],
+            [600,"Coal III"],[400,"Coal II"],[200,"Coal I"],[0,"Unranked"]
         ];
-        return ranks.find(r => elo >= r[0])[1];
+        return (ranks.find(r => elo >= r[0]) || [0, "Unranked"])[1];
     }
 
     async function update() {
@@ -61,30 +62,34 @@
             const res = await fetch(`${BRIDGE}?url=${encodeURIComponent(url)}`);
             const json = await res.json();
             
-            document.getElementById('http-code').innerText = `HTTP: ${res.status}`;
-
             if (json.status === "success") {
                 const u = json.data;
-                document.getElementById('elo').innerText = u.eloRate || "0";
-                document.getElementById('rank-name').innerText = getRank(u.eloRate);
                 
-                // Fixed 2026 Stats Path
-                const win = u.statistics?.season?.wins ?? 0;
-                const loss = u.statistics?.season?.losses ?? 0;
+                // Elo & Rank
+                const currentElo = u.eloRate || 0;
+                document.getElementById('elo').innerText = currentElo;
+                document.getElementById('rank-name').innerText = getRank(currentElo);
+                
+                // Fixed Win/Loss Extraction
+                // MCSR statistics often store seasonal data as objects like {total: 10, ranked: 10}
+                const rawWins = u.statistics?.season?.wins;
+                const rawLosses = u.statistics?.season?.losses;
+                
+                const win = typeof rawWins === 'object' ? (rawWins.total || 0) : (rawWins || 0);
+                const loss = typeof rawLosses === 'object' ? (rawLosses.total || 0) : (rawLosses || 0);
+                
                 const total = win + loss;
                 document.getElementById('wr').innerText = total > 0 ? ((win / total) * 100).toFixed(1) + "%" : "0%";
-                
-                document.getElementById('m-status').innerText = "LIVE";
                 document.getElementById('m-detail').innerText = `Record: ${win}W - ${loss}L`;
             }
         } catch (e) {
             document.getElementById('m-status').innerText = "ERROR";
-            document.getElementById('m-detail').innerText = "API Parsing Error";
+            document.getElementById('m-detail').innerText = "Data Structure Changed";
         }
     }
 
     update();
-    setInterval(update, 120000); 
+    setInterval(update, 60000); 
 </script>
 </body>
 </html>
