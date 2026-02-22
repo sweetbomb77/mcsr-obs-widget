@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST Dashboard v0.2.6</title>
+    <title>SIMGHST Dashboard v0.2.7</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;900&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #0a0a0f; --card: rgba(20, 20, 30, 0.95); --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; --draw: #ffcc00; }
@@ -21,16 +21,15 @@
         .res-status { text-align: center; font-size: 11px; font-weight: 900; letter-spacing: 2px; margin-bottom: 12px; }
         
         .vs-container { display: flex; justify-content: space-between; align-items: flex-start; }
-        .vs-player { display: flex; flex-direction: column; width: 35%; }
+        .vs-player { display: flex; flex-direction: column; width: 38%; }
         .vs-player.right { text-align: right; }
         
-        .p-name { font-size: 15px; font-weight: 800; color: #fff; }
+        .p-name { font-size: 15px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .p-pb { font-size: 9px; color: #666; font-weight: 700; margin-top: 2px; }
         
-        /* Centered VS and Time Block */
-        .vs-center { display: flex; flex-direction: column; align-items: center; width: 30%; margin-top: -4px; }
-        .vs-divider { font-style: italic; font-weight: 900; color: rgba(255,255,255,0.15); font-size: 18px; }
-        .finish-time { font-size: 18px; font-weight: 900; color: var(--accent); margin-top: 2px; text-shadow: 0 0 10px rgba(125, 95, 255, 0.3); }
+        .vs-center { display: flex; flex-direction: column; align-items: center; width: 24%; margin-top: -2px; }
+        .vs-divider { font-style: italic; font-weight: 900; color: rgba(255,255,255,0.1); font-size: 16px; }
+        .finish-time { font-size: 19px; font-weight: 900; margin-top: 4px; filter: drop-shadow(0 0 5px rgba(0,0,0,0.5)); }
 
         .progress-bar { background: rgba(255,255,255,0.1); height: 6px; border-radius: 10px; overflow: hidden; margin: 8px 0; }
         .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 1s ease; }
@@ -75,7 +74,7 @@
     </div>
     <div class="progress-bar"><div id="bar-fill" class="bar-fill"></div></div>
 
-    <div class="footer"><span id="record-pill">34W - 33L</span><span>V 0.2.6</span></div>
+    <div class="footer"><span id="record-pill">34W - 33L</span><span>V 0.2.7</span></div>
 </div>
 
 <script>
@@ -113,11 +112,6 @@
                 
                 document.getElementById('bar-fill').style.width = Math.min((u.eloRate/600)*100, 100) + "%";
                 document.getElementById('prog-val').innerText = `${u.eloRate}/600`;
-                
-                const ranks = [[2000,"Netherite","🟣"],[1500,"Diamond","💎"],[1200,"Emerald","❇️"],[900,"Gold","🟡"],[600,"Iron","⚪"],[400,"Coal III","⬛"],[200,"Coal II","⬛"],[0,"Coal I","⬛"]];
-                const r = ranks.find(rk => u.eloRate >= rk[0]) || [0,"Coal I","⬛"];
-                document.getElementById('rank-text').innerText = r[1];
-                document.getElementById('rank-icon').innerText = r[2];
             }
 
             if (mRes.status === "success" && mRes.data.length > 0) {
@@ -130,8 +124,8 @@
                 document.getElementById('opp-pb').innerText = `PB: ${formatTime(opp.statistics?.season?.bestTime?.ranked)}`;
                 
                 const winnerUUID = m.result.uuid;
-                const timeStr = formatTime(m.result.time);
                 const timeEl = document.getElementById('match-finish-time');
+                const timeStr = formatTime(m.result.time);
 
                 if (!winnerUUID) {
                     document.getElementById('res-type').innerText = "DRAW";
@@ -142,11 +136,13 @@
                     document.getElementById('res-type').innerText = "WIN";
                     document.getElementById('res-type').style.color = "var(--win)";
                     timeEl.innerText = timeStr;
+                    timeEl.style.color = "var(--win)";
                     card.style.borderBottomColor = "var(--win)";
                 } else {
                     document.getElementById('res-type').innerText = "LOSS";
                     document.getElementById('res-type').style.color = "var(--loss)";
                     timeEl.innerText = timeStr;
+                    timeEl.style.color = "var(--loss)";
                     card.style.borderBottomColor = "var(--loss)";
                 }
             }
