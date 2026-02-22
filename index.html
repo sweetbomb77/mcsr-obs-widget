@@ -2,53 +2,50 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST Stats v0.1.9</title>
+    <title>SIMGHST Stats v0.1.10</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root { --bg: rgba(10, 10, 15, 0.95); --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; --draw: #ffa502; }
         body { margin: 0; padding: 10px; font-family: 'Outfit', sans-serif; color: white; background: transparent; width: 340px; overflow: hidden; }
-        .card { background: var(--bg); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 18px; position: relative; }
+        .card { background: var(--bg); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); position: relative; display: flex; flex-direction: column; gap: 18px; }
         .version-tag { position: absolute; bottom: 8px; right: 12px; font-size: 8px; color: #444; font-weight: 800; }
         .header { display: flex; justify-content: space-between; align-items: center; }
         .rank-tag { background: rgba(125, 95, 255, 0.2); color: var(--accent); padding: 5px 12px; border-radius: 10px; font-size: 13px; font-weight: 800; border: 1px solid var(--accent); }
         .grid { display: flex; justify-content: space-between; }
-        .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
         .val { font-size: 26px; font-weight: 800; }
         .footer { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05); }
         .dot { width: 10px; height: 10px; border-radius: 50%; background: #444; }
         .info { display: flex; flex-direction: column; }
         #m-status { font-size: 14px; font-weight: 700; }
-        #m-detail { font-size: 11px; color: #aaa; }
+        #m-detail { font-size: 11px; color: #aaa; margin-top: 2px; }
     </style>
 </head>
 <body>
 <div class="card">
-    <div class="version-tag">V 0.1.9</div>
+    <div class="version-tag">V 0.1.10</div>
     <div class="header">
-        <div id="rank-name" class="rank-tag">WAITING...</div>
+        <div id="rank-name" class="rank-tag">SYNCING...</div>
         <div style="font-size: 11px; opacity: 0.5;">SIMGHST</div>
     </div>
     <div class="grid">
-        <div><div class="label">ELO</div><div id="elo" class="val">---</div></div>
-        <div style="text-align:right;"><div class="label">WINRATE</div><div id="wr" class="val">--%</div></div>
+        <div><div class="label">Current Elo</div><div id="elo" class="val">---</div></div>
+        <div style="text-align:right;"><div class="label">Winrate</div><div id="wr" class="val">--%</div></div>
     </div>
     <div class="footer">
         <div id="dot" class="dot"></div>
         <div class="info">
-            <span id="m-status">STARTING</span>
-            <span id="m-detail">Connecting to MCSR...</span>
+            <span id="m-status">BOOTING</span>
+            <span id="m-detail">Bridge connection...</span>
         </div>
     </div>
 </div>
 
 <script>
+    // YOUR PERSONAL BRIDGE LINK:
+    const BRIDGE = 'https://script.google.com/macros/s/AKfycbygvsvLV51L7addBEBvIsWTSqg5tVz6vuxaynPcEsb153jYBHThOIgoczuDahk8dn1t/exec';
     const KEY = 'lyidaeudwfggjkfydsdglvqaby839pyxmp8e2zovl4fg5mfhbu0zxz4qijhmzyn9';
     const USER = 'simghst';
-
-    function log(msg, data = "") {
-        console.log(`[MCSR DEBUG] ${msg}`, data);
-        document.getElementById('m-detail').innerText = msg;
-    }
 
     function getRank(elo) {
         if (!elo) return "Unranked";
@@ -56,63 +53,37 @@
         return ranks.find(r => elo >= r[0])[1];
     }
 
-    async function safeFetch(url) {
-        // We use a proxy because MCSR blocks direct browser requests
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&timestamp=${Date.now()}`;
-        try {
-            log("Fetching from Proxy...");
-            const response = await fetch(proxyUrl);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const json = await response.json();
-            return JSON.parse(json.contents);
-        } catch (e) {
-            log("Fetch Failed", e.message);
-            throw e;
-        }
+    async function call(path) {
+        const target = `https://api.mcsrranked.com/${path}?api_key=${KEY}`;
+        const res = await fetch(`${BRIDGE}?url=${encodeURIComponent(target)}`);
+        return await res.json();
     }
 
     async function update() {
         try {
-            log("Updating Profile...");
-            const pData = await safeFetch(`https://api.mcsrranked.com/users/${USER}?api_key=${KEY}`);
-            
-            if (pData && pData.status === "success") {
+            const pData = await call(`users/${USER}`);
+            if (pData.status === "success") {
                 const u = pData.data;
-                log("Profile Received", u.nickname);
-                
                 document.getElementById('elo').innerText = u.eloRate || "0";
                 document.getElementById('rank-name').innerText = getRank(u.eloRate);
-                
                 const s = u.statistics.season;
-                const win = s.wins.total || 0;
-                const loss = s.losses.total || 0;
-                document.getElementById('wr').innerText = (win+loss) > 0 ? ((win/(win+loss))*100).toFixed(1)+"%" : "0%";
+                const total = (s.wins.total || 0) + (s.losses.total || 0);
+                document.getElementById('wr').innerText = total > 0 ? ((s.wins.total / total) * 100).toFixed(1) + "%" : "0%";
 
-                log("Updating Matches...");
-                const mData = await safeFetch(`https://api.mcsrranked.com/users/${USER}/matches?api_key=${KEY}&count=1`);
-                
-                if (mData && mData.status === "success" && mData.data.length > 0) {
+                const mData = await call(`users/${USER}/matches`);
+                if (mData.status === "success" && mData.data.length > 0) {
                     const m = mData.data[0];
-                    const winMatch = m.result.uuid === u.uuid;
-                    const drawMatch = m.result.uuid === null;
-                    
-                    const dot = document.getElementById('dot');
+                    const isWin = m.result.uuid === u.uuid;
                     const status = document.getElementById('m-status');
-                    
-                    status.style.color = drawMatch ? 'var(--draw)' : (winMatch ? 'var(--win)' : 'var(--loss)');
-                    dot.style.background = status.style.color;
-                    status.innerText = drawMatch ? "LAST: DRAW" : (winMatch ? "LAST: VICTORY" : "LAST: DEFEAT");
-                    
-                    const time = m.result.time ? new Date(m.result.time).toISOString().substr(14, 5) : "Ranked";
-                    document.getElementById('m-detail').innerText = winMatch ? `Finished in ${time}` : (m.forfeited ? "Forfeited" : "Opponent faster");
-                    log("Update Complete");
+                    status.innerText = isWin ? "LAST: VICTORY" : "LAST: DEFEAT";
+                    status.style.color = isWin ? 'var(--win)' : 'var(--loss)';
+                    document.getElementById('dot').style.background = status.style.color;
+                    document.getElementById('m-detail').innerText = isWin ? "Finished run" : "Forfeited/Slower";
                 }
-            } else {
-                log("API Error", pData ? pData.data : "Unknown");
             }
-        } catch (err) {
-            document.getElementById('m-status').innerText = "ERROR";
-            log("Check Console Logs");
+        } catch (e) {
+            document.getElementById('m-status').innerText = "BRIDGE ERROR";
+            document.getElementById('m-detail').innerText = "Check Google URL";
         }
     }
 
