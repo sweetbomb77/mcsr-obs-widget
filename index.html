@@ -2,22 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST Dashboard v0.2.7</title>
+    <title>SIMGHST Dashboard v0.2.8</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;900&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0a0a0f; --card: rgba(20, 20, 30, 0.95); --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; --draw: #ffcc00; }
+        /* Changed to solid colors */
+        :root { 
+            --bg: #0a0a0f; 
+            --card: #111116; /* Solid background */
+            --accent: #7d5fff; 
+            --win: #00ff88; 
+            --loss: #ff4757; 
+            --draw: #ffcc00; 
+        }
+        
         body { margin: 0; padding: 10px; font-family: 'Outfit', sans-serif; color: white; background: transparent; width: 360px; }
-        .container { background: var(--card); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 18px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); position: relative; }
+        
+        .container { 
+            background: var(--card); 
+            border: 1px solid #222; 
+            border-radius: 24px; 
+            padding: 18px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,1); /* Darker shadow for solid look */
+            position: relative; 
+        }
         
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .rank-badge { background: rgba(125, 95, 255, 0.15); color: var(--accent); padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid var(--accent); display: flex; align-items: center; gap: 5px; }
+        .rank-badge { background: #1a1a25; color: var(--accent); padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid var(--accent); display: flex; align-items: center; gap: 5px; }
         
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat-box { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); }
+        .stat-box { background: #181820; padding: 10px; border-radius: 14px; border: 1px solid #222; }
         .label { font-size: 9px; color: #888; text-transform: uppercase; font-weight: 700; }
         .value { font-size: 20px; font-weight: 800; }
 
-        .match-result { background: rgba(255,255,255,0.02); border-radius: 18px; padding: 15px; margin-bottom: 15px; border-bottom: 3px solid #444; }
+        .match-result { background: #15151d; border-radius: 18px; padding: 15px; margin-bottom: 15px; border-bottom: 3px solid #333; }
         .res-status { text-align: center; font-size: 11px; font-weight: 900; letter-spacing: 2px; margin-bottom: 12px; }
         
         .vs-container { display: flex; justify-content: space-between; align-items: flex-start; }
@@ -28,12 +45,12 @@
         .p-pb { font-size: 9px; color: #666; font-weight: 700; margin-top: 2px; }
         
         .vs-center { display: flex; flex-direction: column; align-items: center; width: 24%; margin-top: -2px; }
-        .vs-divider { font-style: italic; font-weight: 900; color: rgba(255,255,255,0.1); font-size: 16px; }
-        .finish-time { font-size: 19px; font-weight: 900; margin-top: 4px; filter: drop-shadow(0 0 5px rgba(0,0,0,0.5)); }
+        .vs-divider { font-style: italic; font-weight: 900; color: #333; font-size: 16px; }
+        .finish-time { font-size: 19px; font-weight: 900; margin-top: 4px; }
 
-        .progress-bar { background: rgba(255,255,255,0.1); height: 6px; border-radius: 10px; overflow: hidden; margin: 8px 0; }
+        .progress-bar { background: #222; height: 6px; border-radius: 10px; overflow: hidden; margin: 8px 0; }
         .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 1s ease; }
-        .footer { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 11px; font-weight: 700; color: #444; }
+        .footer { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #222; font-size: 11px; font-weight: 700; color: #444; }
     </style>
 </head>
 <body>
@@ -74,7 +91,7 @@
     </div>
     <div class="progress-bar"><div id="bar-fill" class="bar-fill"></div></div>
 
-    <div class="footer"><span id="record-pill">34W - 33L</span><span>V 0.2.7</span></div>
+    <div class="footer"><span id="record-pill">34W - 33L</span><span>V 0.2.8</span></div>
 </div>
 
 <script>
