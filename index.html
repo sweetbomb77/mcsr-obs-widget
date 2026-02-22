@@ -2,59 +2,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST Dashboard v0.2.1</title>
+    <title>SIMGHST Dashboard v0.2.2</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;900&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0a0a0f; --card: rgba(20, 20, 30, 0.95); --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; }
+        :root { --bg: #0a0a0f; --card: rgba(20, 20, 30, 0.95); --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; --draw: #ffcc00; }
         body { margin: 0; padding: 10px; font-family: 'Outfit', sans-serif; color: white; background: transparent; width: 350px; }
-        
-        .container { 
-            background: var(--card); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5); position: relative; overflow: hidden;
-        }
-
-        /* Header Layout */
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-        .user-info { display: flex; flex-direction: column; }
+        .container { background: var(--card); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 18px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); position: relative; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .username { font-weight: 900; font-size: 18px; letter-spacing: 1px; color: #fff; }
-        .rank-badge { 
-            background: rgba(125, 95, 255, 0.15); color: var(--accent); padding: 4px 10px; 
-            border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid var(--accent);
-            margin-top: 4px; display: inline-flex; align-items: center; gap: 5px;
-        }
-
-        /* Stats Grid */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .stat-box { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
-        .label { font-size: 10px; color: #888; text-transform: uppercase; font-weight: 600; margin-bottom: 2px; }
-        .value { font-size: 22px; font-weight: 800; }
-
-        /* Progress Bar */
-        .progress-container { margin-bottom: 15px; }
-        .progress-label { display: flex; justify-content: space-between; font-size: 10px; color: #aaa; margin-bottom: 6px; font-weight: 600; }
-        .bar-bg { background: rgba(255,255,255,0.1); height: 8px; border-radius: 10px; overflow: hidden; }
-        .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #a389ff); width: 0%; transition: width 1s ease; }
-
-        /* Footer Info */
-        .footer { display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); }
-        .record-pill { font-size: 12px; font-weight: 700; color: #ccc; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--win); box-shadow: 0 0 8px var(--win); }
-        
-        .v-tag { position: absolute; top: 0; right: 20px; font-size: 40px; font-weight: 900; color: rgba(255,255,255,0.02); pointer-events: none; }
+        .rank-badge { background: rgba(125, 95, 255, 0.15); color: var(--accent); padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid var(--accent); display: flex; align-items: center; gap: 5px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-box { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); }
+        .label { font-size: 9px; color: #888; text-transform: uppercase; font-weight: 700; margin-bottom: 2px; }
+        .value { font-size: 20px; font-weight: 800; }
+        .match-result { background: rgba(255,255,255,0.02); border-radius: 14px; padding: 12px; margin-bottom: 15px; border-left: 4px solid #444; }
+        .res-header { display: flex; justify-content: space-between; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; }
+        .vs-line { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; }
+        .progress-bar { background: rgba(255,255,255,0.1); height: 6px; border-radius: 10px; overflow: hidden; margin: 8px 0; }
+        .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 1s ease; }
+        .footer { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 11px; font-weight: 700; color: #555; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="v-tag">0.2.1</div>
-    
     <div class="header">
-        <div class="user-info">
-            <span class="username">SIMGHST</span>
-            <div class="rank-badge">
-                <span id="rank-icon">⬛</span>
-                <span id="rank-text">COAL III</span>
-            </div>
+        <div>
+            <div class="username">SIMGHST</div>
+            <div class="rank-badge"><span id="rank-icon">⬛</span> <span id="rank-text">COAL III</span></div>
         </div>
         <div style="text-align: right;">
             <div class="label">Peak Elo</div>
@@ -64,7 +39,7 @@
 
     <div class="stats-grid">
         <div class="stat-box">
-            <div class="label">Current Elo</div>
+            <div class="label">Elo</div>
             <div id="elo" class="value">---</div>
         </div>
         <div class="stat-box">
@@ -73,22 +48,28 @@
         </div>
     </div>
 
-    <div class="progress-container">
-        <div class="progress-label">
-            <span>Progress to Iron I</span>
-            <span id="next-rank-val">0/600</span>
+    <div id="match-card" class="match-result">
+        <div class="res-header">
+            <span id="res-type">Last Match</span>
+            <span id="opponent-name" style="opacity: 0.6;">VS ---</span>
         </div>
-        <div class="bar-bg">
-            <div id="bar-fill" class="bar-fill"></div>
+        <div class="vs-line">
+            <span id="my-time">--:--</span>
+            <span style="font-size: 10px; color: #444;">VS</span>
+            <span id="opp-time">--:--</span>
         </div>
+        <div id="res-detail" style="font-size: 11px; color: #888; margin-top: 5px; font-weight: 600;">Waiting for data...</div>
     </div>
 
+    <div style="display:flex; justify-content:space-between; font-size:9px; color:#555; font-weight:800; text-transform:uppercase;">
+        <span>To Iron I</span>
+        <span id="prog-val">0/600</span>
+    </div>
+    <div class="progress-bar"><div id="bar-fill" class="bar-fill"></div></div>
+
     <div class="footer">
-        <div id="record-pill" class="record-pill">34W - 33L</div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 10px; font-weight: 700; color: #666;">LIVE SYNC</span>
-            <div class="status-dot"></div>
-        </div>
+        <span id="record-pill">0W - 0L</span>
+        <span>V 0.2.2</span>
     </div>
 </div>
 
@@ -97,57 +78,79 @@
     const KEY = 'lyidaeudwfggjkfydsdglvqaby839pyxmp8e2zovl4fg5mfhbu0zxz4qijhmzyn9';
     const USER = 'simghst';
 
-    function getRankData(elo) {
-        const ranks = [
-            {min: 2000, name: "Netherite", icon: "🟣"},
-            {min: 1500, name: "Diamond", icon: "💎"},
-            {min: 1200, name: "Emerald", icon: "❇️"},
-            {min: 900, name: "Gold", icon: "🟡"},
-            {min: 600, name: "Iron", icon: "⚪"},
-            {min: 400, name: "Coal III", icon: "⬛"},
-            {min: 200, name: "Coal II", icon: "⬛"},
-            {min: 0, name: "Coal I", icon: "⬛"}
-        ];
-        return ranks.find(r => elo >= r.min) || ranks[7];
+    function formatTime(ms) {
+        if (!ms || ms === 0) return "DNF";
+        const totalSec = Math.floor(ms / 1000);
+        return `${Math.floor(totalSec / 60)}:${(totalSec % 60).toString().padStart(2, '0')}`;
     }
 
     async function update() {
         try {
-            const url = `https://api.mcsrranked.com/users/${USER}?api_key=${KEY}`;
-            const res = await fetch(`${BRIDGE}?url=${encodeURIComponent(url)}`);
-            const json = await res.json();
+            const pUrl = `https://api.mcsrranked.com/users/${USER}?api_key=${KEY}`;
+            const mUrl = `https://api.mcsrranked.com/users/${USER}/matches?count=1&api_key=${KEY}`;
             
-            if (json.status === "success") {
-                const u = json.data;
+            const [pRes, mRes] = await Promise.all([
+                fetch(`${BRIDGE}?url=${encodeURIComponent(pUrl)}`).then(r => r.json()),
+                fetch(`${BRIDGE}?url=${encodeURIComponent(mUrl)}`).then(r => r.json())
+            ]);
+
+            if (pRes.status === "success") {
+                const u = pRes.data;
                 const s = u.statistics?.season || {};
+                document.getElementById('elo').innerText = u.eloRate;
+                document.getElementById('peak-elo').innerText = u.seasonPeakElo || u.eloRate;
                 
-                const elo = u.eloRate || 0;
-                const peak = u.seasonPeakElo || elo;
-                const rank = getRankData(elo);
-
-                // Basic Stats
-                document.getElementById('elo').innerText = elo;
-                document.getElementById('peak-elo').innerText = peak;
-                document.getElementById('rank-text').innerText = rank.name;
-                document.getElementById('rank-icon').innerText = rank.icon;
-
-                // Winrate (No Forfeits)
-                const wins = s.wins?.ranked || 0;
-                const loses = s.loses?.ranked || 0;
-                const total = wins + loses;
-                const wr = total > 0 ? ((wins / total) * 100).toFixed(1) : "0.0";
+                const w = s.wins?.ranked || 0;
+                const l = s.loses?.ranked || 0;
+                const total = w + l;
+                document.getElementById('wr').innerText = total > 0 ? ((w/total)*100).toFixed(1) + "%" : "0.0%";
+                document.getElementById('record-pill').innerText = `${w}W - ${l}L`;
                 
-                document.getElementById('wr').innerText = wr + "%";
-                document.getElementById('record-pill').innerText = `${wins}W - ${loses}L`;
-
-                // Progress Bar (Target: Iron I @ 600 Elo)
-                const progress = Math.min((elo / 600) * 100, 100);
-                document.getElementById('bar-fill').style.width = progress + "%";
-                document.getElementById('next-rank-val').innerText = `${elo}/600`;
+                const prog = Math.min((u.eloRate / 600) * 100, 100);
+                document.getElementById('bar-fill').style.width = prog + "%";
+                document.getElementById('prog-val').innerText = `${u.eloRate}/600`;
+                
+                const ranks = [[2000,"Netherite","🟣"],[1500,"Diamond","💎"],[1200,"Emerald","❇️"],[900,"Gold","🟡"],[600,"Iron","⚪"],[400,"Coal III","⬛"],[200,"Coal II","⬛"],[0,"Coal I","⬛"]];
+                const r = ranks.find(rk => u.eloRate >= rk[0]) || [0,"Coal I","⬛"];
+                document.getElementById('rank-text').innerText = r[1];
+                document.getElementById('rank-icon').innerText = r[2];
             }
-        } catch (e) {
-            console.error("Sync Error");
-        }
+
+            if (mRes.status === "success" && mRes.data.length > 0) {
+                const m = mRes.data[0];
+                const card = document.getElementById('match-card');
+                const me = m.players.find(p => p.nickname.toLowerCase() === USER.toLowerCase());
+                const opponent = m.players.find(p => p.nickname.toLowerCase() !== USER.toLowerCase());
+                
+                document.getElementById('opponent-name').innerText = `VS ${opponent.nickname.toUpperCase()}`;
+                
+                // MCSR Result Handling
+                const winnerUUID = m.result.uuid;
+                const myTime = m.result.time && winnerUUID === me.uuid ? m.result.time : 0; 
+                // Note: The API usually only provides the winner's time. 
+                
+                document.getElementById('my-time').innerText = winnerUUID === me.uuid ? formatTime(m.result.time) : "DNF";
+                document.getElementById('opp-time').innerText = winnerUUID === opponent.uuid ? formatTime(m.result.time) : "DNF";
+
+                if (!winnerUUID) {
+                    document.getElementById('res-type').innerText = "Draw";
+                    document.getElementById('res-detail').innerText = "No one finished the run.";
+                    card.style.borderLeftColor = "var(--draw)";
+                } else if (m.forfeited) {
+                    document.getElementById('res-type').innerText = "Forfeit";
+                    document.getElementById('res-detail').innerText = "Match was abandoned.";
+                    card.style.borderLeftColor = "var(--loss)";
+                } else if (winnerUUID === me.uuid) {
+                    document.getElementById('res-type').innerText = "Victory";
+                    document.getElementById('res-detail').innerText = `You outpaced ${opponent.nickname}!`;
+                    card.style.borderLeftColor = "var(--win)";
+                } else {
+                    document.getElementById('res-type').innerText = "Defeat";
+                    document.getElementById('res-detail').innerText = `${opponent.nickname} beat the game first.`;
+                    card.style.borderLeftColor = "var(--loss)";
+                }
+            }
+        } catch (e) { console.error(e); }
     }
 
     update();
