@@ -2,52 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST MCSR Stats v0.1.7</title>
+    <title>SIMGHST MCSR Stats v0.1.8</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: rgba(10, 10, 15, 0.95);
-            --accent: #7d5fff;
-            --win: #00ff88;
-            --loss: #ff4757;
-            --draw: #ffa502;
-        }
+        :root { --bg: rgba(10, 10, 15, 0.95); --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; --draw: #ffa502; }
         body { margin: 0; padding: 10px; font-family: 'Outfit', sans-serif; color: white; background: transparent; width: 340px; overflow: hidden; }
-        .card {
-            background: var(--bg); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
-            padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-            display: flex; flex-direction: column; gap: 18px; position: relative;
-        }
-        .version-tag { position: absolute; bottom: 8px; right: 12px; font-size: 8px; color: #444; font-weight: 800; letter-spacing: 0.5px; }
+        .card { background: var(--bg); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 18px; position: relative; }
+        .version-tag { position: absolute; bottom: 8px; right: 12px; font-size: 8px; color: #444; font-weight: 800; }
         .header { display: flex; justify-content: space-between; align-items: center; }
         .rank-tag { background: rgba(125, 95, 255, 0.2); color: var(--accent); padding: 5px 12px; border-radius: 10px; font-size: 13px; font-weight: 800; border: 1px solid var(--accent); }
         .grid { display: flex; justify-content: space-between; }
-        .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
         .val { font-size: 26px; font-weight: 800; }
         .footer { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05); }
-        .dot { width: 10px; height: 10px; border-radius: 50%; background: #444; transition: 0.3s; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: #444; }
         .info { display: flex; flex-direction: column; }
         #m-status { font-size: 14px; font-weight: 700; }
-        #m-detail { font-size: 11px; color: #aaa; margin-top: 2px; }
+        #m-detail { font-size: 11px; color: #aaa; }
     </style>
 </head>
 <body>
 <div class="card">
-    <div class="version-tag">V 0.1.7</div>
+    <div class="version-tag">V 0.1.8</div>
     <div class="header">
-        <div id="rank-name" class="rank-tag">INIT...</div>
-        <div style="font-size: 11px; opacity: 0.5; font-weight: 600;">SIMGHST</div>
+        <div id="rank-name" class="rank-tag">SYNCING...</div>
+        <div style="font-size: 11px; opacity: 0.5;">SIMGHST</div>
     </div>
     <div class="grid">
-        <div><div class="label">Current Elo</div><div id="elo" class="val">---</div></div>
-        <div style="text-align:right;"><div class="label">Winrate</div><div id="wr" class="val">--%</div></div>
+        <div><div class="label">ELO</div><div id="elo" class="val">---</div></div>
+        <div style="text-align:right;"><div class="label">WINRATE</div><div id="wr" class="val">--%</div></div>
     </div>
     <div class="footer">
         <div id="dot" class="dot"></div>
         <div class="info">
-            <span id="m-status">CONNECTING</span>
-            <span id="m-detail">Fetching data...</span>
+            <span id="m-status">STARTING</span>
+            <span id="m-detail">Connecting to MCSR...</span>
         </div>
     </div>
 </div>
@@ -55,107 +44,71 @@
 <script>
     const KEY = 'lyidaeudwfggjkfydsdglvqaby839pyxmp8e2zovl4fg5mfhbu0zxz4qijhmzyn9';
     const USER = 'simghst';
-    let countdownInterval;
 
-    function getRankName(elo) {
-        if (!elo || elo === 0) return "Unranked";
-        if (elo < 200) return "Coal I"; if (elo < 400) return "Coal II"; if (elo < 600) return "Coal III";
-        if (elo < 700) return "Iron I"; if (elo < 800) return "Iron II"; if (elo < 900) return "Iron III";
-        if (elo < 1000) return "Gold I"; if (elo < 1100) return "Gold II"; if (elo < 1200) return "Gold III";
-        if (elo < 1300) return "Emerald I"; if (elo < 1400) return "Emerald II"; if (elo < 1500) return "Emerald III";
-        return "Diamond+";
+    function getRank(elo) {
+        if (!elo) return "Unranked";
+        const ranks = [[1500,"Diamond+"],[1400,"Emerald III"],[1300,"Emerald II"],[1200,"Emerald I"],[1100,"Gold III"],[1000,"Gold II"],[900,"Gold I"],[800,"Iron III"],[700,"Iron II"],[600,"Iron I"],[400,"Coal III"],[200,"Coal II"],[0,"Coal I"]];
+        return ranks.find(r => elo >= r[0])[1];
     }
 
-    function triggerCooldown(seconds) {
-        clearInterval(countdownInterval);
-        let remaining = seconds;
-        const status = document.getElementById('m-status');
-        const detail = document.getElementById('m-detail');
-        
-        status.innerText = "RATE LIMITED";
-        status.style.color = "var(--loss)";
-        
-        countdownInterval = setInterval(() => {
-            remaining--;
-            detail.innerText = `Retrying in ${remaining}s...`;
-            if (remaining <= 0) {
-                clearInterval(countdownInterval);
-                status.innerText = "RECONNECTING";
-                status.style.color = "white";
-                updateWidget();
-            }
-        }, 1000);
-    }
-
-    async function updateWidget() {
+    async function fetchData(url) {
+        // Try direct first, then fallback to a CORS proxy if it fails
         try {
-            // Call 1: User Profile
-            const pRes = await fetch(`https://api.mcsrranked.com/users/${USER}?api_key=${KEY}`);
-            
-            if (pRes.status === 429) {
-                triggerCooldown(60);
-                return;
-            }
-
-            const pData = await pRes.json();
-            
-            if (pData.status === "success") {
-                const u = pData.data;
-                const myUUID = u.uuid; // Capture UUID for match comparison
-                
-                // Update UI with Profile Stats
-                document.getElementById('elo').innerText = u.eloRate || "0";
-                document.getElementById('rank-name').innerText = getRankName(u.eloRate || 0);
-                
-                const s = u.statistics.season;
-                const total = (s.wins.total || 0) + (s.losses.total || 0);
-                document.getElementById('wr').innerText = total > 0 ? ((s.wins.total / total) * 100).toFixed(1) + "%" : "0%";
-
-                // Call 2: Match History (Delayed to avoid burst limit)
-                setTimeout(async () => {
-                    try {
-                        const mRes = await fetch(`https://api.mcsrranked.com/users/${USER}/matches?api_key=${KEY}&count=1`);
-                        if (mRes.status === 429) return; // Silent fail for matches to keep elo visible
-
-                        const mData = await mRes.json();
-                        if (mData.status === "success" && mData.data.length > 0) {
-                            const match = mData.data[0];
-                            const isWin = match.result.uuid === myUUID;
-                            const isDraw = match.result.uuid === null;
-                            
-                            const dot = document.getElementById('dot');
-                            const status = document.getElementById('m-status');
-                            const detail = document.getElementById('m-detail');
-                            
-                            if (isDraw) {
-                                dot.style.background = 'var(--draw)';
-                                status.innerText = "LAST: DRAW";
-                                status.style.color = 'var(--draw)';
-                                detail.innerText = "No winner declared";
-                            } else {
-                                dot.style.background = isWin ? 'var(--win)' : 'var(--loss)';
-                                status.innerText = isWin ? "LAST: VICTORY" : "LAST: DEFEAT";
-                                status.style.color = isWin ? 'var(--win)' : 'var(--loss)';
-                                
-                                const timeStr = match.result.time ? new Date(match.result.time).toISOString().substr(14, 5) : "--:--";
-                                detail.innerText = isWin ? `Finished in ${timeStr}` : (match.forfeited ? "Forfeited / Reset" : "Opponent was faster");
-                            }
-                        }
-                    } catch (mErr) { console.warn("Match history error"); }
-                }, 1500); 
-            }
-        } catch (err) {
-            console.error("API Error:", err);
-            // Only trigger countdown if it's a real connection error
-            if (!navigator.onLine) {
-                document.getElementById('m-status').innerText = "OFFLINE";
-            }
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(response.status);
+            return await response.json();
+        } catch (e) {
+            console.warn("Direct fetch failed, trying proxy...");
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+            const proxied = await fetch(proxyUrl);
+            const data = await proxied.json();
+            return JSON.parse(data.contents);
         }
     }
 
-    updateWidget();
-    // Refresh every 60s
-    setInterval(updateWidget, 60000); 
+    async function update() {
+        try {
+            const profileUrl = `https://api.mcsrranked.com/users/${USER}?api_key=${KEY}`;
+            const pData = await fetchData(profileUrl);
+            
+            if (pData.status === "success") {
+                const u = pData.data;
+                document.getElementById('elo').innerText = u.eloRate || "0";
+                document.getElementById('rank-name').innerText = getRank(u.eloRate);
+                
+                const s = u.statistics.season;
+                const win = s.wins.total || 0;
+                const loss = s.losses.total || 0;
+                document.getElementById('wr').innerText = (win+loss) > 0 ? ((win/(win+loss))*100).toFixed(1)+"%" : "0%";
+
+                // Update Match
+                const matchUrl = `https://api.mcsrranked.com/users/${USER}/matches?api_key=${KEY}&count=1`;
+                const mData = await fetchData(matchUrl);
+                
+                if (mData.status === "success" && mData.data.length > 0) {
+                    const m = mData.data[0];
+                    const winMatch = m.result.uuid === u.uuid;
+                    const drawMatch = m.result.uuid === null;
+                    
+                    const dot = document.getElementById('dot');
+                    const status = document.getElementById('m-status');
+                    
+                    status.style.color = drawMatch ? 'var(--draw)' : (winMatch ? 'var(--win)' : 'var(--loss)');
+                    dot.style.background = status.style.color;
+                    status.innerText = drawMatch ? "LAST: DRAW" : (winMatch ? "LAST: VICTORY" : "LAST: DEFEAT");
+                    
+                    const time = m.result.time ? new Date(m.result.time).toISOString().substr(14, 5) : "Ranked";
+                    document.getElementById('m-detail').innerText = winMatch ? `Finished in ${time}` : (m.forfeited ? "Forfeited" : "Opponent faster");
+                }
+            }
+        } catch (err) {
+            document.getElementById('m-status').innerText = "OFFLINE";
+            document.getElementById('m-detail').innerText = "Retrying shortly...";
+        }
+    }
+
+    update();
+    setInterval(update, 60000);
 </script>
 </body>
 </html>
