@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST Stats v0.1.10</title>
+    <title>SIMGHST Stats v0.1.11</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root { --bg: rgba(10, 10, 15, 0.95); --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; --draw: #ffa502; }
@@ -15,7 +15,7 @@
         .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
         .val { font-size: 26px; font-weight: 800; }
         .footer { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05); }
-        .dot { width: 10px; height: 10px; border-radius: 50%; background: #444; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: #444; transition: 0.3s; }
         .info { display: flex; flex-direction: column; }
         #m-status { font-size: 14px; font-weight: 700; }
         #m-detail { font-size: 11px; color: #aaa; margin-top: 2px; }
@@ -23,10 +23,10 @@
 </head>
 <body>
 <div class="card">
-    <div class="version-tag">V 0.1.10</div>
+    <div class="version-tag">V 0.1.11</div>
     <div class="header">
         <div id="rank-name" class="rank-tag">SYNCING...</div>
-        <div style="font-size: 11px; opacity: 0.5;">SIMGHST</div>
+        <div style="font-size: 11px; opacity: 0.5; font-weight: 600;">SIMGHST</div>
     </div>
     <div class="grid">
         <div><div class="label">Current Elo</div><div id="elo" class="val">---</div></div>
@@ -35,33 +35,30 @@
     <div class="footer">
         <div id="dot" class="dot"></div>
         <div class="info">
-            <span id="m-status">BOOTING</span>
-            <span id="m-detail">Bridge connection...</span>
+            <span id="m-status">LIVE</span>
+            <span id="m-detail">Connected via Bridge</span>
         </div>
     </div>
 </div>
 
 <script>
-    // YOUR PERSONAL BRIDGE LINK:
     const BRIDGE = 'https://script.google.com/macros/s/AKfycbygvsvLV51L7addBEBvIsWTSqg5tVz6vuxaynPcEsb153jYBHThOIgoczuDahk8dn1t/exec';
     const KEY = 'lyidaeudwfggjkfydsdglvqaby839pyxmp8e2zovl4fg5mfhbu0zxz4qijhmzyn9';
     const USER = 'simghst';
 
     function getRank(elo) {
         if (!elo) return "Unranked";
-        const ranks = [[1500,"Diamond+"],[1400,"Emerald III"],[1300,"Emerald II"],[1200,"Emerald I"],[1100,"Gold III"],[1000,"Gold II"],[900,"Gold I"],[800,"Iron III"],[700,"Iron II"],[600,"Iron I"],[400,"Coal III"],[200,"Coal II"],[0,"Coal I"]];
+        const ranks = [[2000,"Netherite"],[1800,"Diamond III"],[1650,"Diamond II"],[1500,"Diamond I"],[1400,"Emerald III"],[1300,"Emerald II"],[1200,"Emerald I"],[1100,"Gold III"],[1000,"Gold II"],[900,"Gold I"],[800,"Iron III"],[700,"Iron II"],[600,"Iron I"],[400,"Coal III"],[200,"Coal II"],[0,"Coal I"]];
         return ranks.find(r => elo >= r[0])[1];
-    }
-
-    async function call(path) {
-        const target = `https://api.mcsrranked.com/${path}?api_key=${KEY}`;
-        const res = await fetch(`${BRIDGE}?url=${encodeURIComponent(target)}`);
-        return await res.json();
     }
 
     async function update() {
         try {
-            const pData = await call(`users/${USER}`);
+            // Fetch Profile
+            const pTarget = `https://api.mcsrranked.com/users/${USER}?api_key=${KEY}`;
+            const pRes = await fetch(`${BRIDGE}?url=${encodeURIComponent(pTarget)}`);
+            const pData = await pRes.json();
+            
             if (pData.status === "success") {
                 const u = pData.data;
                 document.getElementById('elo').innerText = u.eloRate || "0";
@@ -70,7 +67,11 @@
                 const total = (s.wins.total || 0) + (s.losses.total || 0);
                 document.getElementById('wr').innerText = total > 0 ? ((s.wins.total / total) * 100).toFixed(1) + "%" : "0%";
 
-                const mData = await call(`users/${USER}/matches`);
+                // Fetch Match
+                const mTarget = `https://api.mcsrranked.com/users/${USER}/matches?api_key=${KEY}&count=1`;
+                const mRes = await fetch(`${BRIDGE}?url=${encodeURIComponent(mTarget)}`);
+                const mData = await mRes.json();
+
                 if (mData.status === "success" && mData.data.length > 0) {
                     const m = mData.data[0];
                     const isWin = m.result.uuid === u.uuid;
@@ -78,17 +79,20 @@
                     status.innerText = isWin ? "LAST: VICTORY" : "LAST: DEFEAT";
                     status.style.color = isWin ? 'var(--win)' : 'var(--loss)';
                     document.getElementById('dot').style.background = status.style.color;
-                    document.getElementById('m-detail').innerText = isWin ? "Finished run" : "Forfeited/Slower";
+                    
+                    const time = m.result.time ? new Date(m.result.time).toISOString().substr(14, 5) : "Ranked";
+                    document.getElementById('m-detail').innerText = isWin ? `Finished in ${time}` : (m.forfeited ? "Forfeited / Reset" : "Opponent faster");
                 }
             }
         } catch (e) {
-            document.getElementById('m-status').innerText = "BRIDGE ERROR";
-            document.getElementById('m-detail').innerText = "Check Google URL";
+            console.error("Bridge Error:", e);
+            document.getElementById('m-status').innerText = "RECONNECTING";
+            document.getElementById('m-detail').innerText = "API is currently busy...";
         }
     }
 
     update();
-    setInterval(update, 60000);
+    setInterval(update, 60000); // Check for updates every minute
 </script>
 </body>
 </html>
