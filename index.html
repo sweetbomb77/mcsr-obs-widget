@@ -9,34 +9,34 @@
         body { margin: 0; padding: 10px; font-family: 'Outfit', sans-serif; color: white; background: transparent; width: 340px; overflow: hidden; }
         .card { background: var(--bg); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); position: relative; display: flex; flex-direction: column; gap: 18px; }
         .version-tag { position: absolute; bottom: 8px; right: 12px; font-size: 8px; color: #444; font-weight: 800; }
-        .rank-tag { background: rgba(125, 95, 255, 0.2); color: var(--accent); padding: 5px 12px; border-radius: 10px; font-size: 13px; font-weight: 800; border: 1px solid var(--accent); display: flex; align-items: center; gap: 6px; }
+        .rank-tag { background: rgba(125, 95, 255, 0.2); color: var(--accent); padding: 5px 12px; border-radius: 10px; font-size: 13px; font-weight: 800; border: 1px solid var(--accent); display: flex; align-items: center; gap: 8px; }
         .grid { display: flex; justify-content: space-between; }
         .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
         .val { font-size: 26px; font-weight: 800; }
         .footer { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05); }
         .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--win); box-shadow: 0 0 10px var(--win); }
-        #rank-icon { width: 18px; height: 18px; display: inline-block; text-align: center; }
+        #rank-icon { font-size: 16px; }
     </style>
 </head>
 <body>
 <div class="card">
     <div class="version-tag">V 0.1.18</div>
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="rank-tag">
-            <span id="rank-icon">⬛</span>
-            <span id="rank-name">SYNCING</span>
+        <div id="rank-name" class="rank-tag">
+            <span id="rank-icon">⏳</span>
+            <span id="rank-text">SYNCING</span>
         </div>
         <div style="font-size: 11px; opacity: 0.5; font-weight: 600;">SIMGHST</div>
     </div>
     <div class="grid">
-        <div><div class="label">Elo</div><div id="elo" class="val">---</div></div>
+        <div><div class="label">Current Elo</div><div id="elo" class="val">---</div></div>
         <div style="text-align:right;"><div class="label">Winrate</div><div id="wr" class="val">--%</div></div>
     </div>
     <div class="footer">
         <div class="dot"></div>
         <div class="info">
             <span id="m-status" style="font-weight:700; font-size:14px;">LIVE</span>
-            <span id="m-detail" style="font-size:11px; color:#aaa; margin-top:2px;">Fetching Record...</span>
+            <span id="m-detail" style="font-size:11px; color:#aaa; margin-top:2px;">Scanning for stats...</span>
         </div>
     </div>
 </div>
@@ -47,13 +47,27 @@
     const USER = 'simghst';
 
     function getRank(elo) {
-        if (!elo) return { n: "Unranked", i: "⚪" };
         const ranks = [
             [2000, "Netherite", "🟣"], [1500, "Diamond", "💎"], [1200, "Emerald", "❇️"],
             [900, "Gold", "🟡"], [600, "Iron", "⚪"], [0, "Coal", "⬛"]
         ];
-        const r = ranks.find(r => elo >= r[0]);
+        const r = ranks.find(r => elo >= r[0]) || [0, "Coal", "⬛"];
         return { n: r[1], i: r[2] };
+    }
+
+    // New logic: Finds specific values deep in the JSON regardless of structure
+    function findValue(obj, key) {
+        let result = 0;
+        const search = (item) => {
+            if (!item || typeof item !== 'object') return;
+            if (item[key] !== undefined) {
+                const val = typeof item[key] === 'object' ? item[key].total || item[key].ranked : item[key];
+                if (val > result) result = val; 
+            }
+            Object.values(item).forEach(search);
+        };
+        search(obj);
+        return result;
     }
 
     async function update() {
@@ -63,33 +77,32 @@
             const json = await res.json();
             
             if (json.status === "success") {
-                const u = json.data;
-                const r = getRank(u.eloRate);
+                const data = json.data;
                 
-                document.getElementById('elo').innerText = u.eloRate || 0;
-                document.getElementById('rank-name').innerText = r.n;
+                // Set Elo & Rank
+                const currentElo = data.eloRate || 0;
+                const r = getRank(currentElo);
+                document.getElementById('elo').innerText = currentElo;
+                document.getElementById('rank-text').innerText = r.n;
                 document.getElementById('rank-icon').innerText = r.i;
-                
-                // Detailed check for loss statistics in S9 structure
-                const s = u.statistics?.season || {};
-                
-                // We hunt for 'ranked' specifically, then 'total', then just the value
-                const wins = s.wins?.ranked ?? s.wins?.total ?? (typeof s.wins === 'number' ? s.wins : 0);
-                const losses = s.losses?.ranked ?? s.losses?.total ?? (typeof s.losses === 'number' ? s.losses : 0);
+
+                // Scan for stats
+                const wins = findValue(data, 'wins');
+                const losses = findValue(data, 'losses');
                 
                 const total = wins + losses;
-                const wr = total > 0 ? ((wins / total) * 100).toFixed(1) : "0";
+                const wr = total > 0 ? ((wins / total) * 100).toFixed(1) : "0.0";
                 
                 document.getElementById('wr').innerText = wr + "%";
                 document.getElementById('m-detail').innerText = `Record: ${wins}W - ${losses}L`;
             }
         } catch (e) {
-            document.getElementById('m-status').innerText = "ERROR";
+            document.getElementById('m-status').innerText = "SYNC ERROR";
         }
     }
 
     update();
-    setInterval(update, 60000); 
+    setInterval(update, 60000);
 </script>
 </body>
 </html>
