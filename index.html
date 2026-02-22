@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SIMGHST Stats v0.1.13</title>
+    <title>SIMGHST Stats v0.1.14</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root { --bg: rgba(10, 10, 15, 0.95); --accent: #7d5fff; --win: #00ff88; --loss: #ff4757; }
@@ -22,14 +22,14 @@
 </head>
 <body>
 <div class="card">
-    <div class="version-tag">V 0.1.13</div>
+    <div class="version-tag">V 0.1.13.1</div>
     <div class="debug-code" id="http-code">HTTP: --</div>
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div id="rank-name" class="rank-tag">READY</div>
+        <div id="rank-name" class="rank-tag">SYNCING...</div>
         <div style="font-size: 11px; opacity: 0.5; font-weight: 600;">SIMGHST</div>
     </div>
     <div class="grid">
-        <div><div class="label">Current Elo</div><div id="elo" class="val">---</div></div>
+        <div><div class="label">Elo</div><div id="elo" class="val">---</div></div>
         <div style="text-align:right;"><div class="label">Winrate</div><div id="wr" class="val">--%</div></div>
     </div>
     <div class="footer">
@@ -46,63 +46,40 @@
     const KEY = 'lyidaeudwfggjkfydsdglvqaby839pyxmp8e2zovl4fg5mfhbu0zxz4qijhmzyn9';
     const USER = 'simghst';
 
-    async function callAPI(endpoint) {
-        const target = `https://api.mcsrranked.com/${endpoint}?api_key=${KEY}`;
-        try {
-            const res = await fetch(`${BRIDGE}?url=${encodeURIComponent(target)}`);
-            document.getElementById('http-code').innerText = `HTTP: ${res.status}`;
-            
-            if (!res.ok) {
-                console.error(`[BRIDGE ERROR] Status: ${res.status}`);
-                return { status: "error", code: res.status };
-            }
-
-            const data = await res.json();
-            console.log(`[MCSR DATA] from ${endpoint}:`, data);
-            return data;
-        } catch (e) {
-            console.error("[FETCH ERROR]", e);
-            return { status: "error", message: e.message };
-        }
-    }
-
     function getRank(elo) {
         if (!elo) return "Unranked";
-        const ranks = [[2000,"Netherite"],[1800,"Diamond III"],[1500,"Diamond I"],[1400,"Emerald III"],[1200,"Emerald I"],[1000,"Gold II"],[800,"Iron III"],[0,"Coal I"]];
-        return (ranks.find(r => elo >= r[0]) || [0, "Coal I"])[1];
+        const ranks = [
+            [2000,"Netherite"],[1500,"Diamond"],[1200,"Emerald"],[900,"Gold"],
+            [600,"Iron"],[400,"Coal III"],[200,"Coal II"],[0,"Coal I"]
+        ];
+        return ranks.find(r => elo >= r[0])[1];
     }
 
     async function update() {
-        document.getElementById('m-detail').innerText = "Syncing Profile...";
-        const pData = await callAPI(`users/${USER}`);
-
-        if (pData && pData.status === "success") {
-            const u = pData.data;
-            document.getElementById('elo').innerText = u.eloRate || "0";
-            document.getElementById('rank-name').innerText = getRank(u.eloRate);
+        try {
+            const url = `https://api.mcsrranked.com/users/${USER}?api_key=${KEY}`;
+            const res = await fetch(`${BRIDGE}?url=${encodeURIComponent(url)}`);
+            const json = await res.json();
             
-            const s = u.statistics.season;
-            const total = (s.wins.total || 0) + (s.losses.total || 0);
-            document.getElementById('wr').innerText = total > 0 ? ((s.wins.total / total) * 100).toFixed(1) + "%" : "0%";
+            document.getElementById('http-code').innerText = `HTTP: ${res.status}`;
 
-            // Wait 2s then get Match
-            setTimeout(async () => {
-                document.getElementById('m-detail').innerText = "Syncing Matches...";
-                const mData = await callAPI(`users/${USER}/matches?count=1`);
+            if (json.status === "success") {
+                const u = json.data;
+                document.getElementById('elo').innerText = u.eloRate || "0";
+                document.getElementById('rank-name').innerText = getRank(u.eloRate);
                 
-                if (mData && mData.status === "success" && mData.data.length > 0) {
-                    const m = mData.data[0];
-                    const isWin = m.result.uuid === u.uuid;
-                    const status = document.getElementById('m-status');
-                    status.innerText = isWin ? "LAST: VICTORY" : "LAST: DEFEAT";
-                    status.style.color = isWin ? 'var(--win)' : 'var(--loss)';
-                    document.getElementById('dot').style.background = status.style.color;
-                    document.getElementById('m-detail').innerText = isWin ? "Match Sync Complete" : "Opponent faster";
-                }
-            }, 2000);
-        } else {
-            document.getElementById('m-status').innerText = "API ERROR";
-            document.getElementById('m-detail').innerText = pData.code === 429 ? "Rate Limited (Wait 5m)" : "Server Error (500)";
+                // Fixed 2026 Stats Path
+                const win = u.statistics?.season?.wins ?? 0;
+                const loss = u.statistics?.season?.losses ?? 0;
+                const total = win + loss;
+                document.getElementById('wr').innerText = total > 0 ? ((win / total) * 100).toFixed(1) + "%" : "0%";
+                
+                document.getElementById('m-status').innerText = "LIVE";
+                document.getElementById('m-detail').innerText = `Record: ${win}W - ${loss}L`;
+            }
+        } catch (e) {
+            document.getElementById('m-status').innerText = "ERROR";
+            document.getElementById('m-detail').innerText = "API Parsing Error";
         }
     }
 
